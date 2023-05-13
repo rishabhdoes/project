@@ -1,6 +1,6 @@
 const passport = require("passport");
 const { Strategy } = require("passport-jwt");
-const { SECRET } = require("../config");
+const { JWT_SECRET } = require("../config");
 const db = require("../db");
 
 const cookieExtractor = function (req) {
@@ -10,7 +10,7 @@ const cookieExtractor = function (req) {
 };
 
 const opts = {
-  secret: SECRET,
+  secretOrKey: JWT_SECRET,
   jwtFromRequest: cookieExtractor,
 };
 
@@ -21,6 +21,8 @@ passport.use(
         "SELECT id, email FROM users WHERE id = $1",
         [id]
       );
+
+      console.log(rows);
 
       if (!rows.length) {
         throw new Error("401 not authorised");

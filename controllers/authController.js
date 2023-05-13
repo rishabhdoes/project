@@ -1,6 +1,7 @@
-const { SECRET } = require("../config");
+const { JWT_SECRET } = require("../config");
 const db = require("../db");
 const { sign } = require("jsonwebtoken");
+const { hash } = require("bcryptjs");
 
 exports.getUsers = async (req, res) => {
   try {
@@ -12,7 +13,7 @@ exports.getUsers = async (req, res) => {
 };
 
 exports.register = async (req, res) => {
-  const [email, username, phone_number, password] = req.body;
+  const { email, username, phone_number, password } = req.body;
 
   try {
     const password_hash = await hash(password, 10);
@@ -32,7 +33,6 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   let user = req.user;
-  console.log(user);
 
   payload = {
     id: user.id,
@@ -40,7 +40,7 @@ exports.login = async (req, res) => {
   };
 
   try {
-    const token = sign(payload, SECRET);
+    const token = sign(payload, JWT_SECRET, { expiresIn: "365d" });
 
     return res.status(200).cookie("token", token, { httpOnly: true }).json({
       success: true,
@@ -51,4 +51,8 @@ exports.login = async (req, res) => {
       error: error.message,
     });
   }
+};
+
+exports.protected = async (req, res) => {
+  res.send("Hi");
 };
