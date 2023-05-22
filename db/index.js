@@ -14,13 +14,13 @@ async function connectToPostgres() {
   try {
     client = await pool.connect();
     console.log("Connected to PostgreSQL");
-    await client.query(queries.user);
-    await client.query(queries.otpToken);
-    await client.query(queries.properties);
-    await client.query(queries.favorites);
-    await client.query(queries.propertiesContactedTable);
-    await client.query(queries.propertyMediaTable);
-    await client.query(queries.pgTable);
+    // await client.query(queries.user);
+    // await client.query(queries.otpToken);
+    // await client.query(queries.properties);
+    // await client.query(queries.favorites);
+    // await client.query(queries.propertiesContactedTable);
+    // await client.query(queries.propertyMediaTable);
+    // await client.query(queries.pgTable);
   } catch (error) {
     console.error("Error connecting to PostgreSQL:", error);
   } finally {
