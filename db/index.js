@@ -1,5 +1,5 @@
 const { Pool } = require("pg");
-const queries = require("./user");
+const queries = require("./tables");
 
 const pool = new Pool({
   user: "postgres",
@@ -14,7 +14,8 @@ async function connectToPostgres() {
   try {
     client = await pool.connect();
     console.log("Connected to PostgreSQL");
-    await client.query(queries.create_table);
+    await client.query(queries.user);
+    await client.query(queries.otpToken);
   } catch (error) {
     console.error("Error connecting to PostgreSQL:", error);
   } finally {

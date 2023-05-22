@@ -11,6 +11,8 @@ router.get("/", (req, res) => {
 
 router.post("/register", registerValidation, validationMiddleware, register);
 router.post("/login", loginValidation, validationMiddleware, login);
+
+//example
 router.get("/protected", userAuth, protected);
 
 module.exports = router;
