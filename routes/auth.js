@@ -1,7 +1,8 @@
 const { Router } = require("express");
 const { registerValidation, loginValidation } = require("../validators/auth");
 const { validationMiddleware } = require("../middleware/validation-middleware");
-const { register, login } = require("../controllers/authController");
+const { register, login, protected } = require("../controllers/authController");
+const { userAuth } = require("../middleware/auth-middleware");
 const router = Router();
 
 router.get("/", (req, res) => {
@@ -10,5 +11,8 @@ router.get("/", (req, res) => {
 
 router.post("/register", registerValidation, validationMiddleware, register);
 router.post("/login", loginValidation, validationMiddleware, login);
+
+//example
+router.get("/protected", userAuth, protected);
 
 module.exports = router;

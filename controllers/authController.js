@@ -1,24 +1,31 @@
-const { SECRET } = require("../config");
+const { JWT_SECRET } = require("../config");
 const db = require("../db");
 const { sign } = require("jsonwebtoken");
-
-exports.getUsers = async (req, res) => {
-  try {
-    const { rows } = await db.query("select * from users");
-    console.log(rows);
-  } catch (error) {
-    console.log(error.message);
-  }
-};
+const { hash } = require("bcryptjs");
+const { generateOTP } = require("../utils/mail");
 
 exports.register = async (req, res) => {
-  const [email, username, phone_number, password] = req.body;
+  const { email, username, phone_number, password } = req.body;
 
   try {
     const password_hash = await hash(password, 10);
+
     await db.query(
       "INSERT INTO users(username, email, phone_number, password_hash) values ($1, $2, $3, $4)",
       [username, email, phone_number, password_hash]
+    );
+
+    const OTP = generateOTP();
+
+    const otptoken_hash = await hash(OTP, 10);
+
+    const user = await db.query("SELECT * FROM users WHERE email = $1", [
+      email,
+    ]);
+
+    await db.query(
+      "INSERT INTO otpTokens(userId, otptoken_hash) values ($1, $2)",
+      [user.id, otptoken_hash]
     );
 
     return res.status(201).json({
@@ -32,7 +39,6 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   let user = req.user;
-  console.log(user);
 
   payload = {
     id: user.id,
@@ -40,7 +46,7 @@ exports.login = async (req, res) => {
   };
 
   try {
-    const token = sign(payload, SECRET);
+    const token = sign(payload, JWT_SECRET, { expiresIn: "365d" });
 
     return res.status(200).cookie("token", token, { httpOnly: true }).json({
       success: true,
@@ -51,4 +57,8 @@ exports.login = async (req, res) => {
       error: error.message,
     });
   }
+};
+
+exports.protected = async (req, res) => {
+  res.send("Hi");
 };

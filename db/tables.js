@@ -1,18 +1,27 @@
 const queries = {
-    users: `CREATE TABLE users (
-                  id serial PRIMARY KEY,
-                  username VARCHAR ( 255 ) UNIQUE NOT NULL,
-                  password_hash VARCHAR ( 255 ) NOT NULL,
-                  email VARCHAR ( 255 ) UNIQUE NOT NULL,
-                  phone_number NUMERIC(10, 0) CHECK (phone_number >= 1000000000 AND phone_number < 10000000000 AND phone_number = TRUNC(phone_number)),
-                  is_user_admin BOOLEAN DEFAULT FALSE NOT NULL,
-                  count_property_listed NUMERIC(1000,0) DEFAULT 0,
-                  shortlisted_count NUMERIC DEFAULT 0,
-                  contacted_count NUMERIC DEFAULT 0,
-                  created_at DATE DEFAULT CURRENT_DATE,
-                  last_login TIMESTAMP );
-      `,
-      properties:`
+  user: `CREATE TABLE users (
+      id SERIAL PRIMARY KEY,
+      username VARCHAR ( 255 ) UNIQUE NOT NULL,
+      password_hash VARCHAR ( 255 ) NOT NULL,
+      email VARCHAR ( 255 ) UNIQUE NOT NULL,
+      phone_number NUMERIC(10, 0) CHECK (phone_number >= 1000000000 AND phone_number < 10000000000 AND phone_number = TRUNC(phone_number)),
+      is_user_admin BOOLEAN DEFAULT FALSE NOT NULL,
+      count_property_listed NUMERIC(1000,0) DEFAULT 0,
+      verified BOOLEAN DEFAULT FALSE NOT NULL,
+      shortlisted_count NUMERIC DEFAULT 0,
+      contacted_count NUMERIC DEFAULT 0,
+      created_at DATE DEFAULT CURRENT_DATE,
+      last_login TIMESTAMP );
+    `,
+
+  otpToken: `CREATE TABLE otpTokens (
+      id SERIAL PRIMARY KEY,
+      otptoken_hash VARCHAR ( 255 ) NOT NULL,
+      userId INT  NOT NULL,
+      FOREIGN KEY(userId) REFERENCES users(id),
+      created_at DATE DEFAULT CURRENT_DATE);`,
+
+  properties: `
       CREATE TABLE properties (
        propertyId serial PRIMARY KEY,
        ownerId INT  NOT NULL,
@@ -42,7 +51,7 @@ const queries = {
        );
       `,
 
-      favorites:`
+  favorites: `
       CREATE TABLE favorites(
         id serial PRIMARY KEY,
         userId INT  NOT NULL,
@@ -52,9 +61,8 @@ const queries = {
         propertyStatus VARCHAR ( 50 )  NOT NULL,
         brokerAssigned Boolean
       )
-      `
-      ,
-      pgTable:`
+      `,
+  pgTable: `
       CREATE TABLE pgTable(
       id serial PRIMARY KEY,
       propertyId INT NOT NULL,
@@ -64,7 +72,7 @@ const queries = {
       pricePerBed NUMERIC NOT NULL
       )
       `,
-      propertiesContactedTable:`
+  propertiesContactedTable: `
       CREATE TABLE propertiesContactedTable(
       id serial PRIMARY KEY,
       userId INT  NOT NULL,
@@ -73,7 +81,7 @@ const queries = {
       FOREIGN KEY (propertyId) REFERENCES properties(propertyId)
       )
       `,
-      propertyMediaTable:`
+  propertyMediaTable: `
       CREATE TABLE propertyMediaTable(
       mediaId serial PRIMARY KEY,
       userId INT  NOT NULL,
@@ -82,8 +90,7 @@ const queries = {
       FOREIGN KEY (propertyId) REFERENCES properties(propertyId),
       mediaUrl VARCHAR ( 250 )  NOT NULL
       )
-      `
-  };
-  
-  module.exports = queries;
-  
+      `,
+};
+
+module.exports = queries;
