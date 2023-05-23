@@ -15,8 +15,8 @@ const phoneNumber = check("phone_number")
   .withMessage("Phone must be numeric")
   .custom((value) => {
     const stringVal = String(value);
-    if (stringVal.length !== 10) {
-      throw new Error("Phone number must be of 10 digits");
+    if (stringVal.length !== 12) {
+      throw new Error("Invalid Phone Number");
     }
 
     return true;

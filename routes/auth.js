@@ -16,7 +16,7 @@ router.get("/", (req, res) => {
 
 router.post("/register", registerValidation, validationMiddleware, register);
 router.post("/login", loginValidation, validationMiddleware, login);
-router.post("/verify-token", validationMiddleware, verify);
+router.post("/verify-token", verify);
 
 //example
 router.get("/protected", userAuth, protected);

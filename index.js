@@ -15,14 +15,13 @@ app.use(passport.initialize());
 
 const authRoutes = require("./routes/auth");
 
-app.use("/api", authRoutes);
+app.use(authRoutes);
 
 app.get("/", async (req, res) => {
   const results = await db.query("select * from users");
-  console.log(results);
   res.send("hi");
 });
 
 app.listen(PORT, () => {
-  console.log("listening on port 3000");
+  console.log("listening on port 5000");
 });

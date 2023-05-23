@@ -6,7 +6,7 @@ const { generateOTP, mailTransport } = require("../utils/mail");
 const { sendMsg } = require("../utils/errors");
 
 exports.register = async (req, res) => {
-  const { email, username, phone_number, password } = req.body;
+  const { email, name: username, phone_number, password } = req.body;
 
   try {
     const password_hash = await hash(password, 10);
@@ -38,7 +38,7 @@ exports.register = async (req, res) => {
       html: `<h1>${OTP}</h1>`,
     });
 
-    return sendMsg(res, 201, true, "The registration was successfull");
+    return sendMsg(res, 201, true, { userId: id });
   } catch (err) {
     console.log(err.message);
   }
@@ -95,6 +95,7 @@ exports.login = async (req, res) => {
     return res.status(200).cookie("token", token, { httpOnly: true }).json({
       success: true,
       message: "Logged in successfully",
+      user: user,
     });
   } catch (error) {
     return sendMsg(res, 500, false, error.message);
