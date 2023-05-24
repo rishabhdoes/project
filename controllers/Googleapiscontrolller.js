@@ -50,17 +50,35 @@ const nearbyLocalities=async(req,res)=>{
   try{
   const {text}=req.query;
  const coordinates=await getCoordinatesByLocation(text);
-  var config={
+  var config1={
     method:"get",
-    url:`https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${coordinates[0]}%2C${coordinates[1]}&radius=5000&&keyword=${text}&key=${process.env.GMAP_API_KEY}`,
+    url:`https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${coordinates[0]}%2C${coordinates[1]}&radius=5000&types=route&key=${process.env.GMAP_API_KEY}`,
+
+    headers: {},
+  };
+  var config2={
+    method:"get",
+    url:`https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${coordinates[0]}%2C${coordinates[1]}&radius=5000&types=sublocality&key=${process.env.GMAP_API_KEY}`,
+
+    headers: {},
+  };
+  var config3={
+    method:"get",
+    url:`https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${coordinates[0]}%2C${coordinates[1]}&radius=5000&types=street_address&key=${process.env.GMAP_API_KEY}`,
+
     headers: {},
   };
 
-  const response=await axios(config)
-  console.log(response.data);
-    // const suggestions=response.data.predictions.map((locationData)=>locationData.description);
-    
-    // res.status(200).json(suggestions);
+  const response=await Promise.all( [axios(config1),axios(config2),axios(config3)]);
+  
+   //console.log(response[0].data);
+     const suggestions=response.map((res)=>res.data.results.map((locationData)=>locationData.name))
+
+     
+
+     const allSuggestions=suggestions.flat();
+     //console.log(allSuggestions)
+     res.status(200).json(allSuggestions);
  
 }
 catch(err){
