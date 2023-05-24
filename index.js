@@ -14,8 +14,13 @@ app.use(cors({ origin: CLIENT_URL, credentials: true }));
 app.use(passport.initialize());
 
 const authRoutes = require("./routes/auth");
+const secureRoutes=require('./routes/secureRoutes')
+
+
+
 
 app.use("/api", authRoutes);
+app.use("/secure/api",secureRoutes);
 
 app.get("/", async (req, res) => {
   const results = await db.query("select * from users");

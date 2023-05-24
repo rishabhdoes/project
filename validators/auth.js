@@ -46,6 +46,7 @@ const loginFieldsCheck = check("email").custom(async (value, { req }) => {
   );
 
   if (!validPassword) {
+    
     throw new Error("Wrong credentials");
   }
 
