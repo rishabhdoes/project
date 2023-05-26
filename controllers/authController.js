@@ -75,10 +75,26 @@ exports.verify = async (req, res) => {
 
   user.rows[0].verified = true;
 
+  const verifiedUser = user.rows[0];
+
   await db.query("DELETE FROM otpTokens WHERE userId = $1", [userId]);
   await db.query("UPDATE users SET verified = true WHERE id = $1", [userId]);
 
-  res.json({ success: true, message: "email is verified" });
+  payload = {
+    verifiedUser,
+  };
+
+  try {
+    const token = sign(payload, JWT_SECRET, { expiresIn: "365d" });
+
+    return res.status(200).cookie("token", token, { httpOnly: true }).json({
+      success: true,
+      message: "Logged in successfully",
+      user: verifiedUser,
+    });
+  } catch (error) {
+    return sendMsg(res, 500, false, error.message);
+  }
 };
 
 exports.login = async (req, res) => {
