@@ -3,7 +3,7 @@ const { userAuth } = require('../middleware/auth-middleware');
 const { suggestionAutocomplete, nearbyLocalities } = require('../controllers/Googleapiscontrolller');
 const router = Router();
 
-//app.use(userAuth);
+//router.use(userAuth);
 
 router.get('/autocomplete',suggestionAutocomplete);
 router.get('/nearbyLocalities',nearbyLocalities);

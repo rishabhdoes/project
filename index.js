@@ -13,13 +13,13 @@ app.use(cookieParser());
 app.use(cors({ origin: CLIENT_URL, credentials: true }));
 app.use(passport.initialize());
 
-const authRoutes = require("./routes/auth");
+const publicRoutes = require("./routes/publicRoutes");
 const secureRoutes=require('./routes/secureRoutes')
 
 
 
 
-app.use("/api", authRoutes);
+app.use("/public/api", publicRoutes);
 app.use("/secure/api",secureRoutes);
 
 app.get("/", async (req, res) => {
@@ -29,5 +29,5 @@ app.get("/", async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log("listening on port 3000");
+  console.log("listening on port 5000");
 });
