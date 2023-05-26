@@ -1,3 +1,6 @@
+const { MAILTRAP_USERNAME, MAILTRAP_PASSWORD } = require("../config");
+const nodemailer = require("nodemailer");
+
 exports.generateOTP = () => {
   let otp = "";
 
@@ -6,4 +9,17 @@ exports.generateOTP = () => {
   }
 
   return otp;
+};
+
+exports.mailTransport = () => {
+  var transport = nodemailer.createTransport({
+    host: "sandbox.smtp.mailtrap.io",
+    port: 2525,
+    auth: {
+      user: MAILTRAP_USERNAME,
+      pass: MAILTRAP_PASSWORD,
+    },
+  });
+
+  return transport;
 };

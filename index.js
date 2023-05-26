@@ -14,17 +14,13 @@ app.use(cors({ origin: CLIENT_URL, credentials: true }));
 app.use(passport.initialize());
 
 const publicRoutes = require("./routes/publicRoutes");
-const secureRoutes=require('./routes/secureRoutes')
-
-
-
+const secureRoutes = require("./routes/secureRoutes");
 
 app.use("/public/api", publicRoutes);
-app.use("/secure/api",secureRoutes);
+app.use("/secure/api", secureRoutes);
 
 app.get("/", async (req, res) => {
   const results = await db.query("select * from users");
-  console.log(results);
   res.send("hi");
 });
 

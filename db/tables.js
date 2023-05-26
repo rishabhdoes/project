@@ -1,10 +1,10 @@
 const queries = {
   user: `CREATE TABLE users (
       id SERIAL PRIMARY KEY,
-      username VARCHAR ( 255 ) UNIQUE NOT NULL,
+      username VARCHAR ( 255 ) NOT NULL,
       password_hash VARCHAR ( 255 ) NOT NULL,
       email VARCHAR ( 255 ) UNIQUE NOT NULL,
-      phone_number NUMERIC(10, 0) CHECK (phone_number >= 1000000000 AND phone_number < 10000000000 AND phone_number = TRUNC(phone_number)),
+      phone_number NUMERIC(13, 0) CHECK (phone_number >= 100000000000 AND phone_number < 1000000000000 AND phone_number = TRUNC(phone_number)),
       is_user_admin BOOLEAN DEFAULT FALSE NOT NULL,
       count_property_listed NUMERIC(1000,0) DEFAULT 0,
       verified BOOLEAN DEFAULT FALSE NOT NULL,
