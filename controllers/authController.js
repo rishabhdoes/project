@@ -6,14 +6,14 @@ const { generateOTP, mailTransport } = require("../utils/mail");
 const { sendMsg } = require("../utils/errors");
 
 exports.register = async (req, res) => {
-  const { email, name: username, phone_number, password } = req.body;
+  const { email, name, phone_number, password } = req.body;
 
   try {
     const password_hash = await hash(password, 10);
 
     await db.query(
-      "INSERT INTO users(username, email, phone_number, password_hash) values ($1, $2, $3, $4)",
-      [username, email, phone_number, password_hash]
+      "INSERT INTO users(name, email, phone_number, password_hash) values ($1, $2, $3, $4)",
+      [name, email, phone_number, password_hash]
     );
 
     const OTP = generateOTP();
@@ -116,8 +116,4 @@ exports.login = async (req, res) => {
   } catch (error) {
     return sendMsg(res, 500, false, error.message);
   }
-};
-
-exports.protected = async (req, res) => {
-  res.send("Hi");
 };

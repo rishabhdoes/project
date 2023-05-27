@@ -1,14 +1,8 @@
 const { Router } = require("express");
 const { registerValidation, loginValidation } = require("../validators/auth");
 const { validationMiddleware } = require("../middleware/validation-middleware");
-const {
-  register,
-  login,
-  protected,
-  verify,
-} = require("../controllers/authController");
+const { register, login, verify } = require("../controllers/authController");
 
-const { userAuth } = require("../middleware/auth-middleware");
 const router = Router();
 
 router.get("/", (req, res) => {
