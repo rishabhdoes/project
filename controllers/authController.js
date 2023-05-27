@@ -4,7 +4,7 @@ const { sign } = require("jsonwebtoken");
 const { hash, compare } = require("bcryptjs");
 const { generateOTP, mailTransport } = require("../utils/mail");
 const { sendMsg } = require("../utils/errors");
-
+const jwt = require("jsonwebtoken");
 exports.register = async (req, res) => {
   const { email, name: username, phone_number, password } = req.body;
 
@@ -27,7 +27,7 @@ exports.register = async (req, res) => {
     const { id } = user.rows[0];
 
     await db.query(
-      "INSERT INTO otpTokens(userId, otptoken_hash) values ($1, $2)",
+      "INSERT INTO otpTokens(userId, otptoken_hash, actions) values ($1, $2, 'verify_email')",
       [id, otptoken_hash]
     );
 
@@ -104,4 +104,55 @@ exports.login = async (req, res) => {
 
 exports.protected = async (req, res) => {
   res.send("Hi");
+};
+
+exports.forgotPassword = async (req, res) => {
+  const user = req.user;
+  const id = user.id;
+  const { email } = req.body;
+  const token = jwt.sign({ email: email }, JWT_SECRET, { expiresIn: "15m" });
+  const baseUrl = process.env.CLIENT_URL;
+  const link = `${baseUrl}/resetpassword/${id}/${token}`;
+
+  try {
+    // await db.query(
+    //   "INSERT INTO users(userId, otptoken_hash, actions) values ($1, $2, 'forgot_password')",
+    //   [id, token]
+    // );
+    mailTransport().sendMail({
+      from: "yesbroker@gmail.com",
+      to: email,
+      subject: "Change your password",
+      html: `<a href="${link}">Click here to reset password</a>`,
+    });
+    return sendMsg(res, 201, true);
+  }
+  catch (error) {
+    console.log(error);
+  }
+};
+exports.resetPassword = async (req, res) => {
+
+  const { user_id, token } = req.params;
+  const newPassword = req.body.newPassword;
+  try {
+    const password_hash = await hash(newPassword, 10);
+    const secret = JWT_SECRET;
+    try {
+      const verify = jwt.verify(token, secret);
+      console.log("verify:", verify);
+
+      await db.query(`UPDATE users SET password_hash=$1 WHERE id=$2`, [password_hash, user_id]);
+      console.log("first")
+      return res.status(200).send("Password Changed!");
+    } catch (error) {
+      console.log(error);
+      res.statusText = "Link Expired"
+      return res.status(400).send("Link Expired");
+      // res.json({ status: "Something Went Wrong" });
+    }
+
+  } catch (error) {
+
+  }
 };
