@@ -25,7 +25,7 @@ async function connectToPostgres() {
     //     "DROP TABLE IF EXISTS propertiesContactedTable CASCADE"
     //   ),
     //   await client.query("DROP TABLE IF EXISTS propertyMediaTable CASCADE"),
-    // await client.query(queries.users);
+    //   await client.query(queries.users);
     // await client.query(queries.otpTokens);
     // await client.query(queries.houses);
     // await client.query(queries.houseFacilities);

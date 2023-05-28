@@ -27,7 +27,7 @@ exports.register = async (req, res) => {
     const { id } = user.rows[0];
 
     await db.query(
-      "INSERT INTO otpTokens(userId, otptoken_hash) values ($1, $2)",
+      "INSERT INTO otpTokens(user_id, otptoken_hash) values ($1, $2)",
       [id, otptoken_hash]
     );
 
@@ -59,7 +59,7 @@ exports.verify = async (req, res) => {
   if (user.rows[0].verified)
     return sendMsg(res, 401, false, "Account already verified");
 
-  const token = await db.query("SELECT * FROM otpTokens WHERE userId = $1", [
+  const token = await db.query("SELECT * FROM otpTokens WHERE user_id = $1", [
     userId,
   ]);
 
@@ -77,7 +77,7 @@ exports.verify = async (req, res) => {
 
   const verifiedUser = user.rows[0];
 
-  await db.query("DELETE FROM otpTokens WHERE userId = $1", [userId]);
+  await db.query("DELETE FROM otpTokens WHERE user_id = $1", [userId]);
   await db.query("UPDATE users SET verified = true WHERE id = $1", [userId]);
 
   payload = {

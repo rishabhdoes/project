@@ -55,10 +55,10 @@ const queries = {
        rent_negotiable BOOLEAN DEFAULT FALSE NOT NULL,
        bedrooms INTEGER DEFAULT 0 CHECK (bedrooms >= 0),
        bathrooms INTEGER DEFAULT 0 CHECK (bathrooms >= 0),
-       property_type VARCHAR ( 255 ) NOT NULL,
-       preferred_tenants VARCHAR (255),
+       property_type VARCHAR ( 255 ) DEFAULT 'independent' NOT NULL,
+       preferred_tenants VARCHAR (255) DEFAULT 'any' NOT NULL,
        available_from TIMESTAMP,
-       furnishing_type VARCHAR(255) NOT NULL,
+       furnishing_type VARCHAR(255) DEFAULT 'none' NOT NULL,
        lockin_period VARCHAR (255),
        updated_at TIMESTAMP,
        Rank INTEGER,
@@ -148,7 +148,7 @@ const queries = {
 
         lockin_period VARCHAR (255),
         preferred_tenants VARCHAR (255),
-        gender VARCHAR (255),
+        gender VARCHAR (255) DEFAULT 'any' NOT NULL,
         food BOOLEAN DEFAULT FALSE NOT NULL,
         rank INTEGER,
         created_at DATE DEFAULT CURRENT_DATE
