@@ -156,6 +156,7 @@ exports.updateHouseProperty = async (req, res) => {
 
   // check whether values are null or not
   // also check if key exists in db
+  // (user cannot just put any key value, it must exist in db as well)
   const houseArr = Object.entries(houseObj)
     .filter(([key, value]) => {
       return value !== null && houseArrDBKeys.includes(key);
@@ -325,7 +326,7 @@ exports.updatePgProperty = async (req, res) => {
   const userId = req.user.id;
   const { pgId } = req.params;
 
-  const rows = await db.query("SELECT * FROM pgs WHERE id = $1", [pgId]);
+  const { rows } = await db.query("SELECT * FROM pgs WHERE id = $1", [pgId]);
 
   if (!rows.length) return res.status(404).json("Pg does not exist");
 
@@ -436,9 +437,7 @@ exports.updatePgProperty = async (req, res) => {
   ];
 
   const pgArr = Object.entries(pgObject)
-    .filter(([key, value]) => {
-      return value !== null && pgArrDBKeys.includes(key);
-    })
+    .filter(([key, value]) => value !== null && pgArrDBKeys.includes(key))
     .map(([key, value]) => ({
       key,
       value,
@@ -446,12 +445,10 @@ exports.updatePgProperty = async (req, res) => {
 
   if (pgArr.length > 0) {
     const updateDbQuery = `UPDATE pgs SET ${pgArr
-      .map((pg, index) => `${pg.key} = $${index + 1}`)
+      .map((pg, index) => `"${pg.key}" = $${index + 1}`)
       .join(", ")} WHERE id = $${pgArr.length + 1} RETURNING *`;
 
-    const values = pgArr.map((cur) => {
-      return cur.value;
-    });
+    const values = pgArr.map((cur) => cur.value);
 
     updatedPg = await db.query(updateDbQuery, [...values, pgId]);
   }
@@ -493,7 +490,7 @@ exports.updatePgProperty = async (req, res) => {
     warden_facilities = null,
   } = req.body;
 
-  const pgFacilitesObj = {
+  const pgFacilitiesObj = {
     ac,
     attached_bathroom,
     breakfast,
@@ -567,16 +564,16 @@ exports.updatePgProperty = async (req, res) => {
     "warden_facilities",
   ];
 
-  const pgFacilitiesArr = Object.entries(pgFacilitesObj)
-    .filter(([key, value]) => {
-      value !== null && pgFacilitiesDBKeys.includes(key);
-    })
+  const pgFacilitiesArr = Object.entries(pgFacilitiesObj)
+    .filter(
+      ([key, value]) => value !== null && pgFacilitiesDBKeys.includes(key)
+    )
     .map(([key, value]) => ({
       key,
       value,
     }));
 
-  if ([pgFacilitiesArr].length > 0) {
+  if (pgFacilitiesArr.length > 0) {
     let updatedPgFacility = {};
 
     if (rows.length === 0) {
@@ -589,19 +586,14 @@ exports.updatePgProperty = async (req, res) => {
 
       const dbQuery = `INSERT INTO pgFacilities (${columns}) VALUES (${placeholders}) RETURNING *`;
 
-      const values = pgFacilitiesArr.map((cur) => {
-        return cur.value;
-      });
+      const values = pgFacilitiesArr.map((cur) => cur.value);
 
       updatedPgFacility = await db.query(dbQuery, [...values, pgId]);
     } else {
+      const values = pgFacilitiesArr.map((facility, index) => facility.value);
       const updateFacilities = `UPDATE pgFacilities SET ${pgFacilitiesArr
-        .map((facility, index) => `${facility.key} = $${index + 1}`)
+        .map((facility, index) => `"${facility.key}" = $${index + 1}`)
         .join(", ")} WHERE pg_id = $${pgFacilitiesArr.length + 1} RETURNING *`;
-
-      const values = pgFacilitiesArr.map((cur) => {
-        return cur.value;
-      });
 
       updatedPgFacility = await db.query(updateFacilities, [...values, pgId]);
     }
@@ -609,5 +601,5 @@ exports.updatePgProperty = async (req, res) => {
     updatedPg = { ...updatedPg, ...updatedPgFacility };
   }
 
-  res.status(200).json({ messgae: "Updated Pg Successfully", pg: updatedPg });
+  res.status(200).json({ message: "Updated Pg Successfully", pg: updatedPg });
 };
