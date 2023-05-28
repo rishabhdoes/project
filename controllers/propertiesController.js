@@ -40,13 +40,17 @@ exports.updateHouseProperty = async (req, res) => {
   const userId = req.user.id;
   const { houseId } = req.params;
 
-  const rows = await db.query("SELECT * FROM houses WHERE id = $1", [houseId]);
+  const { rows } = await db.query("SELECT * FROM houses WHERE id = $1", [
+    houseId,
+  ]);
 
   if (!rows.length) return res.status(404).json("House does not exist");
 
   const house = rows[0];
 
   if (house.owner_id !== userId) return res.status(401).json("Not Authorised");
+
+  let updatedHouse = {};
 
   const {
     title = null,
@@ -114,6 +118,7 @@ exports.updateHouseProperty = async (req, res) => {
     rank,
   };
 
+  // default array that contains all columns that exist in houses db
   const houseArrDBKeys = [
     "id",
     "owner_id",
@@ -149,24 +154,27 @@ exports.updateHouseProperty = async (req, res) => {
     "rank",
   ];
 
+  // check whether values are null or not
+  // also check if key exists in db
   const houseArr = Object.entries(houseObj)
     .filter(([key, value]) => {
-      value !== null && houseArrDBKeys.includes(key);
+      return value !== null && houseArrDBKeys.includes(key);
     })
-    .map(([key, value]) => {
-      key, value;
-    });
+    .map(([key, value]) => ({
+      key,
+      value,
+    }));
 
   if (houseArr.length > 0) {
     const updateDbQuery = `UPDATE houses SET ${houseArr
-      .map((house, index) => `${house} = $${index + 1}`)
-      .join(", ")} WHERE id = $${houseArr.length + 1}`;
+      .map((house, index) => `${house.key} = $${index + 1}`)
+      .join(", ")} WHERE id = $${houseArr.length + 1} RETURNING *`;
 
     const values = houseArr.map((cur) => {
       return cur.value;
     });
 
-    await db.query(updateDbQuery, [...values, houseId]);
+    updatedHouse = await db.query(updateDbQuery, [...values, houseId]);
   }
 
   const {
@@ -227,6 +235,7 @@ exports.updateHouseProperty = async (req, res) => {
     club_house,
   };
 
+  // default array that contains all columns that exist in houseFacilities db
   const houseFacilitiesDBKeys = [
     "id",
     "house_id",
@@ -258,34 +267,58 @@ exports.updateHouseProperty = async (req, res) => {
     "club_house",
   ];
 
+  // check whether values are null or not
+  // also check if key exists in db
   const houseFacilitiesArr = Object.entries(houseFacilitiesObj)
     .filter(([key, value]) => {
       value !== null && houseFacilitiesDBKeys.includes(key);
     })
-    .map(([key, value]) => {
-      key, value;
-    });
+    .map(([key, value]) => ({
+      key,
+      value,
+    }));
 
   if (houseFacilitiesArr.length > 0) {
-    const { rows } = db.query(
-      "SELECT * FROM houseFacilities WHERE house_id = $1",
-      [houseId]
-    );
+    let updatedHouseFacility = {};
 
     if (rows.length === 0) {
-    } else {
-      const updateFacilities = `UPDATE houses SET ${houseArr
-        .map((house, index) => `${house} = $${index + 1}`)
-        .join(", ")} WHERE id = $${houseArr.length + 1}`;
-      const values = houseArr.map((cur) => {
+      const columns = houseFacilitiesArr
+        .map((facility) => `"${facility.key}"`)
+        .join(", ");
+      const placeholders = houseFacilitiesArr
+        .map((_, index) => `$${index + 1}`)
+        .join(", ");
+
+      const dbQuery = `INSERT INTO houseFacilities (${columns}) VALUES (${placeholders}) RETURNING *`;
+
+      const values = houseFacilitiesArr.map((cur) => {
         return cur.value;
       });
 
-      await db.query(updateDbQuery, [...values, houseId]);
+      updatedHouseFacility = await db.query(dbQuery, [...values, houseId]);
+    } else {
+      const updateFacilities = `UPDATE houseFacilities SET ${houseFacilitiesArr
+        .map((facility, index) => `${facility.key} = $${index + 1}`)
+        .join(", ")} WHERE house_id = $${
+        houseFacilitiesArr.length + 1
+      } RETURNING *`;
+
+      const values = houseFacilitiesArr.map((cur) => {
+        return cur.value;
+      });
+
+      updatedHouseFacility = await db.query(updateFacilities, [
+        ...values,
+        houseId,
+      ]);
     }
+
+    updatedHouse = { ...updatedHouse, ...updatedHouseFacility };
   }
 
-  res.status(200).json("Updated House Successfully");
+  res
+    .status(200)
+    .json({ messgae: "Updated House Successfully", house: updatedHouse });
 };
 
 exports.updatePgProperty = async (req, res) => {
