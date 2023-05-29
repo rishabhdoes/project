@@ -2,6 +2,7 @@ const { Router } = require("express");
 const { registerValidation, loginValidation } = require("../validators/auth");
 const { validationMiddleware } = require("../middleware/validation-middleware");
 const { register, login, verify } = require("../controllers/authController");
+const { suggestionAutocomplete, nearbyLocalities } = require("../controllers/Googleapiscontrolller");
 
 const router = Router();
 
@@ -12,5 +13,8 @@ router.get("/", (req, res) => {
 router.post("/register", registerValidation, validationMiddleware, register);
 router.post("/login", loginValidation, validationMiddleware, login);
 router.post("/verify-token", verify);
+
+router.get("/autocomplete", suggestionAutocomplete);
+router.get("/nearbyLocalities", nearbyLocalities);
 
 module.exports = router;

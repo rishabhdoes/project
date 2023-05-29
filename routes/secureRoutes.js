@@ -19,8 +19,7 @@ const router = Router();
 router.use(userAuth);
 
 // map
-router.get("/autocomplete", suggestionAutocomplete);
-router.get("/nearbyLocalities", nearbyLocalities);
+
 
 // properties
 router.post("/newProperty/house/create", newHouseProperty);
