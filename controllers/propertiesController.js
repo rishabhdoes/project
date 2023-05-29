@@ -603,3 +603,19 @@ exports.updatePgProperty = async (req, res) => {
 
   res.status(200).json({ message: "Updated Pg Successfully", pg: updatedPg });
 };
+
+exports.getMyListings = async (req, res) => {
+  const userId = req.user.id;
+
+  const houses = await db.query(
+    "SELECT * FROM houses FULL OUTER JOIN houseFacilities ON houses.id = houseFacilities.house_id WHERE houses.owner_id = $1",
+    [userId]
+  );
+
+  const pgs = await db.query(
+    "SELECT * FROM pgs FULL OUTER JOIN pgfacilities ON pgs.id = pgfacilities.pg_id WHERE pgs.owner_id = $1",
+    [userId]
+  );
+
+  res.status(200).json({ house: houses.rows, pg: pgs.rows });
+};

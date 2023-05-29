@@ -11,6 +11,7 @@ const {
   newPgProperty,
   updateHouseProperty,
   updatePgProperty,
+  getMyListings,
 } = require("../controllers/propertiesController");
 
 const router = Router();
@@ -28,4 +29,6 @@ router.post("/newProperty/pg/create", newPgProperty);
 router.post("/newProperty/pg/update/:pgId", updatePgProperty);
 
 // fetch all user listings
+router.get("/user/mylistings/", getMyListings);
+
 module.exports = router;
