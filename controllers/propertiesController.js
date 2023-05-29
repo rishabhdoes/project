@@ -606,7 +606,7 @@ const updatePgProperty = async (req, res) => {
   res.status(200).json({ message: "Updated Pg Successfully", pg: updatedPg });
 };
 
-exports.getMyListings = async (req, res) => {
+const getMyListings = async (req, res) => {
   const userId = req.user.id;
 
   const houses = await db.query(
@@ -622,24 +622,21 @@ exports.getMyListings = async (req, res) => {
   res.status(200).json({ house: houses.rows, pg: pgs.rows });
 };
 
-const listPropertiesOnSearch=async (req,res)=>{
-
-  const {city,text,pgNo}=req.body;
-//console.log(pgNo)
+const listPropertiesOnSearch = async (req, res) => {
+  const { city, text, pgNo } = req.body;
+  //console.log(pgNo)
   //console.log(city,text)
 
-   const keywords=text.map(
-    (textArray)=>{
-    const op= textArray.split(',');
-   // console.log(op);
+  const keywords = text.map((textArray) => {
+    const op = textArray.split(",");
+    // console.log(op);
     return op;
-   }
-   );
+  });
 
-   const allKeywords=keywords.flat();
-   
+  const allKeywords = keywords.flat();
+
   //console.log(allKeywords)
-   
+
   const query = `
   SELECT id
   FROM houses
@@ -662,20 +659,18 @@ const listPropertiesOnSearch=async (req,res)=>{
   
 `;
 
-const paginatedQuery=`select * from query`
+  const paginatedQuery = `select * from query`;
 
-const {rows}=await db.query(query,[allKeywords,city,10*pgNo,10]);
+  const { rows } = await db.query(query, [allKeywords, city, 10 * pgNo, 10]);
 
-return res.status(200).json(rows)
+  return res.status(200).json(rows);
+};
 
-}
-
-
-module.exports={
+module.exports = {
   newHouseProperty,
   newPgProperty,
   updateHouseProperty,
   updatePgProperty,
-  listPropertiesOnSearch
-
-}
+  listPropertiesOnSearch,
+  getMyListings,
+};
