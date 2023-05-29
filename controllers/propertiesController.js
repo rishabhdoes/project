@@ -1,7 +1,9 @@
 const db = require("../db");
 
-exports.newHouseProperty = async (req, res) => {
+const newHouseProperty = async (req, res) => {
   const { city } = req.body;
+
+  console.log(req.user);
   const userId = req.user.id;
 
   const cities = ["gurgaon", "mumbai", "banglore", "delhi", "hyderabad"];
@@ -18,7 +20,7 @@ exports.newHouseProperty = async (req, res) => {
   res.status(201).json({ message: "new house created", houseId });
 };
 
-exports.newPgProperty = async (req, res) => {
+const newPgProperty = async (req, res) => {
   const { city } = req.body;
   const userId = req.user.id;
 
@@ -36,7 +38,7 @@ exports.newPgProperty = async (req, res) => {
   res.status(201).json({ message: "new pg created", pgId });
 };
 
-exports.updateHouseProperty = async (req, res) => {
+const updateHouseProperty = async (req, res) => {
   const userId = req.user.id;
   const { houseId } = req.params;
 
@@ -321,7 +323,7 @@ exports.updateHouseProperty = async (req, res) => {
     .json({ messgae: "Updated House Successfully", house: updatedHouse });
 };
 
-exports.updatePgProperty = async (req, res) => {
+const updatePgProperty = async (req, res) => {
   const userId = req.user.id;
   const { pgId } = req.params;
 
@@ -420,3 +422,61 @@ exports.updatePgProperty = async (req, res) => {
   await db.query(updateDbQuery, [...values, pgId]);
   res.status(200).json("Updated Pg Successfully");
 };
+
+const listPropertiesOnSearch=async (req,res)=>{
+
+  const {city,text,pgNo}=req.body;
+//console.log(pgNo)
+  //console.log(city,text)
+
+   const keywords=text.map(
+    (textArray)=>{
+    const op= textArray.split(',');
+   // console.log(op);
+    return op;
+   }
+   );
+
+   const allKeywords=keywords.flat();
+   
+  //console.log(allKeywords)
+   
+  const query = `
+  SELECT id
+  FROM houses
+  WHERE city ILIKE $2
+    AND locality ILIKE ANY (
+      SELECT '%' || pattern || '%'
+      FROM unnest($1::text[]) AS pattern
+    )
+  ORDER BY (
+    SELECT COUNT(DISTINCT word)
+    FROM regexp_split_to_table(locality, E'\\s+') AS word
+    WHERE word ILIKE ANY (
+      SELECT '%' || pattern || '%'
+      FROM unnest($1::text[]) AS pattern
+    )
+  ) DESC
+  OFFSET $3
+  LIMIT $4;
+  
+  
+`;
+
+const paginatedQuery=`select * from query`
+
+const {rows}=await db.query(query,[allKeywords,city,10*pgNo,10]);
+
+return res.status(200).json(rows)
+
+}
+
+
+module.exports={
+  newHouseProperty,
+  newPgProperty,
+  updateHouseProperty,
+  updatePgProperty,
+  listPropertiesOnSearch
+
+}
