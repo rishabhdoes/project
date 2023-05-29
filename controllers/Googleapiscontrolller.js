@@ -31,11 +31,26 @@ const suggestionAutocomplete = async (req, res) => {
     ]);
 
     const suggestions = response.map((res) =>
-      res.data.predictions.map((locationData) =>locationData)
+      res.data.predictions.map((locationData) =>{
+        return {description:locationData.description,
+                placeId:locationData.place_id
+        };
+      })
     );
     
+  const suggestionSet=new Set();
+  const allSuggestions=[];
+   
+    for(let description of suggestions.flat())
+    {
+      if(!suggestionSet.has(description.placeId))
+      {
+        allSuggestions.push(description);
+      }
+      suggestionSet.add(description.placeId);
+    }
 
-    const allSuggestions = [...new Set(suggestions.flat())];
+    
 
     res.status(200).json(allSuggestions);
   } catch (err) {
