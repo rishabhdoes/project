@@ -14,3 +14,4 @@ Noida:[28.5355,77.3910,10000]
 
 
 module.exports={Coordinates};
+
