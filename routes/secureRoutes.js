@@ -16,7 +16,7 @@ const {
 
 const router = Router();
 
-router.use(userAuth);
+//router.use(userAuth);
 
 // map
 
