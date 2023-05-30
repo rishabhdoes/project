@@ -3,6 +3,7 @@ const { registerValidation, loginValidation } = require("../validators/auth");
 const { validationMiddleware } = require("../middleware/validation-middleware");
 const { register, login, verify } = require("../controllers/authController");
 const { suggestionAutocomplete, nearbyLocalities } = require("../controllers/Googleapiscontrolller");
+const { listPropertiesOnSearch } = require("../controllers/propertiesController");
 
 const router = Router();
 
@@ -16,5 +17,6 @@ router.post("/verify-token", verify);
 
 router.get("/autocomplete", suggestionAutocomplete);
 router.get("/nearbyLocalities", nearbyLocalities);
+router.post('/listProperties',listPropertiesOnSearch);
 
 module.exports = router;
