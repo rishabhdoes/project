@@ -15,9 +15,7 @@ const opts = {
 };
 
 passport.use(
-  new Strategy(opts, async (obj, done) => {
-    const { id } = obj.verifiedUser;
-
+  new Strategy(opts, async ({ id }, done) => {
     try {
       const { rows } = await db.query(
         "SELECT id, email FROM users WHERE id = $1",
