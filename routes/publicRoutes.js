@@ -4,12 +4,15 @@ const { validationMiddleware } = require("../middleware/validation-middleware");
 const {
   register,
   login,
-  protected,
   verify,
   forgotPassword,
   resetPassword,
 } = require("../controllers/authController");
-const { userAuth } = require("../middleware/auth-middleware");
+// const { userAuth } = require("../middleware/auth-middleware");
+
+const { suggestionAutocomplete, nearbyLocalities } = require("../controllers/Googleapiscontrolller");
+const { listPropertiesOnSearch } = require("../controllers/propertiesController");
+
 const router = Router();
 
 router.get("/", (req, res) => {
@@ -22,7 +25,8 @@ router.post("/verify-token", verify);
 router.post("/forgot-password", emailValidation, forgotPassword);
 router.post(`/reset-password/:user_id/:token`, tokenValidation, resetPassword);
 
-//example
-router.get("/protected", userAuth, protected);
+router.get("/autocomplete", suggestionAutocomplete);
+router.get("/nearbyLocalities", nearbyLocalities);
+router.post('/listProperties',listPropertiesOnSearch);
 
 module.exports = router;
