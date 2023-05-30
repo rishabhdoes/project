@@ -425,7 +425,7 @@ const updatePgProperty = async (req, res) => {
 
 const listPropertiesOnSearch=async (req,res)=>{
 
-  const {city,text,pgNo}=req.body;
+  const {propertyType,city,text,pgNo}=req.body;
 
 
    const keywords=text.map(
@@ -439,9 +439,11 @@ const listPropertiesOnSearch=async (req,res)=>{
    const allKeywords=keywords.flat();
    
    
-  const query = `
+  const queryForHouse = `
   SELECT *
   FROM houses
+  LEFT JOIN housefacilities
+  on houses.id=housefacilities.house_id
   WHERE city ILIKE $2
     AND locality ILIKE ANY (
       SELECT '%' || pattern || '%'
@@ -460,12 +462,43 @@ const listPropertiesOnSearch=async (req,res)=>{
   
   
 `;
+const queryForPg = `
+SELECT *
+FROM pgs
+LEFT JOIN pgfacilities
+on houses.id=pgfacilities.pg_id
+WHERE city ILIKE $2
+  AND locality ILIKE ANY (
+    SELECT '%' || pattern || '%'
+    FROM unnest($1::text[]) AS pattern
+  )
+ORDER BY (
+  SELECT COUNT(DISTINCT word)
+  FROM regexp_split_to_table(locality, E'\\s+') AS word
+  WHERE word ILIKE ANY (
+    SELECT '%' || pattern || '%'
+    FROM unnest($1::text[]) AS pattern
+  )
+) DESC, houses.created_at DESC
+OFFSET $3
+LIMIT $4;
 
-const paginatedQuery=`select * from query`
 
-const {rows}=await db.query(query,[allKeywords,city,10*pgNo,10]);
+`;
 
-return res.status(200).json(rows)
+if(propertyType=="House")
+{
+  const {rows}=await db.query(queryForHouse,[allKeywords,city,3*pgNo,3]);
+
+  return res.status(200).json(rows)
+}
+else{
+  const {rows}=await db.query(queryForPg,[allKeywords,city,10*pgNo,10]);
+
+  return res.status(200).json(rows)
+}
+
+
 
 }
 
