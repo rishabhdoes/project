@@ -81,7 +81,7 @@ exports.verify = async (req, res) => {
   await db.query("UPDATE users SET verified = true WHERE id = $1", [userId]);
 
   payload = {
-    verifiedUser,
+    ...verifiedUser,
   };
 
   try {
@@ -90,7 +90,6 @@ exports.verify = async (req, res) => {
     return res.status(200).cookie("token", token, { httpOnly: true }).json({
       success: true,
       message: "Logged in successfully",
-      user: verifiedUser,
     });
   } catch (error) {
     return sendMsg(res, 500, false, error.message);

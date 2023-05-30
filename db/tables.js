@@ -61,7 +61,7 @@ const queries = {
        furnishing_type VARCHAR(255) DEFAULT 'none' NOT NULL,
        lockin_period VARCHAR (255),
        updated_at TIMESTAMP,
-       Rank INTEGER,
+       rank INTEGER DEFAULT 0,
        secondary_number NUMERIC(13, 0) CHECK (secondary_number >= 100000000000 AND secondary_number < 1000000000000 AND secondary_number = TRUNC(secondary_number)),
        created_at DATE DEFAULT CURRENT_DATE
        );
@@ -150,7 +150,7 @@ const queries = {
         preferred_tenants VARCHAR (255),
         gender VARCHAR (255) DEFAULT 'any' NOT NULL,
         food BOOLEAN DEFAULT FALSE NOT NULL,
-        rank INTEGER,
+        rank INTEGER DEFAULT 0,
         created_at DATE DEFAULT CURRENT_DATE
       );
     `,
