@@ -622,8 +622,8 @@ const getMyListings = async (req, res) => {
   res.status(200).json({ house: houses.rows, pg: pgs.rows });
 };
 
-  const {city,text,pgNo}=req.body;
-
+const listPropertiesOnSearch = async (req, res) => {
+  const { city, text, pgNo, type } = req.body;
 
   const keywords = text.map((textArray) => {
     const op = textArray.split(",");
@@ -631,12 +631,15 @@ const getMyListings = async (req, res) => {
     return op;
   });
 
-   const allKeywords=keywords.flat();
-   
-   
-  const query = `
+  const allKeywords = keywords.flat();
+
+  let query = "";
+
+  if (type === "house") {
+    query = `
   SELECT *
-  FROM houses
+  FROM houses JOIN houseFacilities
+  ON houses.id = houseFacilities.house_id
   WHERE city ILIKE $2
     AND locality ILIKE ANY (
       SELECT '%' || pattern || '%'
@@ -652,9 +655,29 @@ const getMyListings = async (req, res) => {
   ) DESC, houses.created_at DESC
   OFFSET $3
   LIMIT $4;
-  
-  
-`;
+  `;
+  } else {
+    query = `
+    SELECT *
+    FROM pgs JOIN pgFacilities
+    ON pgs.id = pgFacilities.house_id
+    WHERE city ILIKE $2
+      AND locality ILIKE ANY (
+        SELECT '%' || pattern || '%'
+        FROM unnest($1::text[]) AS pattern
+      )
+    ORDER BY (
+      SELECT COUNT(DISTINCT word)
+      FROM regexp_split_to_table(locality, E'\\s+') AS word
+      WHERE word ILIKE ANY (
+        SELECT '%' || pattern || '%'
+        FROM unnest($1::text[]) AS pattern
+      )
+    ) DESC, pgs.created_at DESC
+    OFFSET $3
+    LIMIT $4;
+  `;
+  }
 
   const paginatedQuery = `select * from query`;
 
