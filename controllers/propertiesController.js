@@ -2,6 +2,8 @@ const db = require("../db");
 
 const newHouseProperty = async (req, res) => {
   const { city } = req.body;
+
+  console.log(req.user);
   const userId = req.user.id;
 
   const cities = ["gurgaon", "mumbai", "banglore", "delhi", "hyderabad"];
@@ -156,7 +158,6 @@ const updateHouseProperty = async (req, res) => {
 
   // check whether values are null or not
   // also check if key exists in db
-  // (user cannot just put any key value, it must exist in db as well)
   const houseArr = Object.entries(houseObj)
     .filter(([key, value]) => {
       return value !== null && houseArrDBKeys.includes(key);
@@ -326,15 +327,13 @@ const updatePgProperty = async (req, res) => {
   const userId = req.user.id;
   const { pgId } = req.params;
 
-  const { rows } = await db.query("SELECT * FROM pgs WHERE id = $1", [pgId]);
+  const rows = await db.query("SELECT * FROM house WHERE id = $1", [pgId]);
 
   if (!rows.length) return res.status(404).json("Pg does not exist");
 
   const pg = rows[0];
 
   if (pg.owner_id !== userId) return res.status(401).json("Not Authorised");
-
-  let updatedPg = {};
 
   const {
     pg_name = null,
@@ -406,241 +405,45 @@ const updatePgProperty = async (req, res) => {
     rank,
   };
 
-  const pgArrDBKeys = [
-    "pg_name",
-    "description",
-    "block",
-    "street",
-    "locality",
-    "colony",
-    "city",
-    "state",
-    "country",
-    "zip_code",
-    "single_room",
-    "single_room_rent",
-    "single_room_deposit",
-    "double_room",
-    "double_room_rent",
-    "double_room_deposit",
-    "triple_room",
-    "triple_room_rent",
-    "triple_room_deposit",
-    "four_room",
-    "four_room_rent",
-    "four_room_deposit",
-    "lockin_period",
-    "preferred_tenants",
-    "gender",
-    "food",
-    "rank",
-  ];
-
   const pgArr = Object.entries(pgObject)
-    .filter(([key, value]) => value !== null && pgArrDBKeys.includes(key))
-    .map(([key, value]) => ({
-      key,
-      value,
-    }));
+    .filter(([key, value]) => value !== null)
+    .map(([key, value]) => {
+      key, value;
+    });
 
-  if (pgArr.length > 0) {
-    const updateDbQuery = `UPDATE pgs SET ${pgArr
-      .map((pg, index) => `"${pg.key}" = $${index + 1}`)
-      .join(", ")} WHERE id = $${pgArr.length + 1} RETURNING *`;
+  const updateDbQuery = `UPDATE pgs SET ${pgArr
+    .map((pg, index) => `${pg} = $${index + 1}`)
+    .join(", ")} WHERE id = $${pgArr.length + 1}`;
 
-    const values = pgArr.map((cur) => cur.value);
-
-    updatedPg = await db.query(updateDbQuery, [...values, pgId]);
-  }
-
-  const {
-    ac = null,
-    attached_bathroom = null,
-    breakfast = null,
-    lunch = null,
-    dinner = null,
-    fridge = null,
-    water_filter = null,
-    washing_machine = null,
-    tv = null,
-    cupboard = null,
-    geyser = null,
-    gym = null,
-    two_wheeler_parking = null,
-    four_wheeler_parking = null,
-    lift = null,
-    cctv = null,
-    power_backup = null,
-    water_supply = null,
-    gated_security = null,
-    wifi = null,
-    cooking_followed = null,
-    fire_safety = null,
-    club_house = null,
-    smoking = null,
-    guardians_allowed = null,
-    opposite_gender = null,
-    drinking = null,
-    nonveg = null,
-    music_party = null,
-    laundry = null,
-    room_cleaning = null,
-    biometric_security = null,
-    tt_table = null,
-    warden_facilities = null,
-  } = req.body;
-
-  const pgFacilitiesObj = {
-    ac,
-    attached_bathroom,
-    breakfast,
-    lunch,
-    dinner,
-    fridge,
-    water_filter,
-    washing_machine,
-    tv,
-    cupboard,
-    geyser,
-    gym,
-    two_wheeler_parking,
-    four_wheeler_parking,
-    lift,
-    cctv,
-    power_backup,
-    water_supply,
-    gated_security,
-    wifi,
-    cooking_followed,
-    fire_safety,
-    club_house,
-    smoking,
-    guardians_allowed,
-    opposite_gender,
-    drinking,
-    nonveg,
-    music_party,
-    laundry,
-    room_cleaning,
-    biometric_security,
-    tt_table,
-    warden_facilities,
-  };
-
-  const pgFacilitiesDBKeys = [
-    "ac",
-    "attached_bathroom",
-    "breakfast",
-    "lunch",
-    "dinner",
-    "fridge",
-    "water_filter",
-    "washing_machine",
-    "tv",
-    "cupboard",
-    "geyser",
-    "gym",
-    "two_wheeler_parking",
-    "four_wheeler_parking",
-    "lift",
-    "cctv",
-    "power_backup",
-    "water_supply",
-    "gated_security",
-    "wifi",
-    "cooking_followed",
-    "fire_safety",
-    "club_house",
-    "smoking",
-    "guardians_allowed",
-    "opposite_gender",
-    "drinking",
-    "nonveg",
-    "music_party",
-    "laundry",
-    "room_cleaning",
-    "biometric_security",
-    "tt_table",
-    "warden_facilities",
-  ];
-
-  const pgFacilitiesArr = Object.entries(pgFacilitiesObj)
-    .filter(
-      ([key, value]) => value !== null && pgFacilitiesDBKeys.includes(key)
-    )
-    .map(([key, value]) => ({
-      key,
-      value,
-    }));
-
-  if (pgFacilitiesArr.length > 0) {
-    let updatedPgFacility = {};
-
-    if (rows.length === 0) {
-      const columns = pgFacilitiesArr
-        .map((facility) => `"${facility.key}"`)
-        .join(", ");
-      const placeholders = pgFacilitiesArr
-        .map((_, index) => `$${index + 1}`)
-        .join(", ");
-
-      const dbQuery = `INSERT INTO pgFacilities (${columns}) VALUES (${placeholders}) RETURNING *`;
-
-      const values = pgFacilitiesArr.map((cur) => cur.value);
-
-      updatedPgFacility = await db.query(dbQuery, [...values, pgId]);
-    } else {
-      const values = pgFacilitiesArr.map((facility, index) => facility.value);
-      const updateFacilities = `UPDATE pgFacilities SET ${pgFacilitiesArr
-        .map((facility, index) => `"${facility.key}" = $${index + 1}`)
-        .join(", ")} WHERE pg_id = $${pgFacilitiesArr.length + 1} RETURNING *`;
-
-      updatedPgFacility = await db.query(updateFacilities, [...values, pgId]);
-    }
-
-    updatedPg = { ...updatedPg, ...updatedPgFacility };
-  }
-
-  res.status(200).json({ message: "Updated Pg Successfully", pg: updatedPg });
-};
-
-const getMyListings = async (req, res) => {
-  const userId = req.user.id;
-
-  const houses = await db.query(
-    "SELECT * FROM houses FULL OUTER JOIN houseFacilities ON houses.id = houseFacilities.house_id WHERE houses.owner_id = $1",
-    [userId]
-  );
-
-  const pgs = await db.query(
-    "SELECT * FROM pgs FULL OUTER JOIN pgfacilities ON pgs.id = pgfacilities.pg_id WHERE pgs.owner_id = $1",
-    [userId]
-  );
-
-  res.status(200).json({ house: houses.rows, pg: pgs.rows });
-};
-
-const listPropertiesOnSearch = async (req, res) => {
-  const { city, text, pgNo, type } = req.body;
-
-
-  const keywords = text.map((textArray) => {
-    const op = textArray.split(",");
-    // console.log(op);
-    return op;
+  const values = pgArr.map((cur) => {
+    return cur.value;
   });
 
-  const allKeywords = keywords.flat();
+  await db.query(updateDbQuery, [...values, pgId]);
+  res.status(200).json("Updated Pg Successfully");
+};
 
-  let query = "";
+const listPropertiesOnSearch=async (req,res)=>{
 
-  console.log(req.body);
+  const {propertyType,city,text,pgNo}=req.body;
 
-  if (type === "house") {
-    query = `
+
+   const keywords=text.map(
+    (textArray)=>{
+    const op= textArray.split(',');
+   // console.log(op);
+    return op;
+   }
+   );
+
+   const allKeywords=keywords.flat();
+   
+   
+  const queryForHouse = `
   SELECT *
-  FROM houses FULL OUTER JOIN houseFacilities
-  ON houses.id = houseFacilities.house_id
+  FROM houses
+  LEFT JOIN housefacilities
+  on houses.id=housefacilities.house_id
   WHERE city ILIKE $2
     AND locality ILIKE ANY (
       SELECT '%' || pattern || '%'
@@ -656,42 +459,55 @@ const listPropertiesOnSearch = async (req, res) => {
   ) DESC, houses.created_at DESC
   OFFSET $3
   LIMIT $4;
-  `;
-  } else {
-    query = `
-    SELECT *
-    FROM pgs FULL OUTER JOIN pgFacilities
-    ON pgs.id = pgFacilities.pg_id
-    WHERE city ILIKE $2
-      AND locality ILIKE ANY (
-        SELECT '%' || pattern || '%'
-        FROM unnest($1::text[]) AS pattern
-      )
-    ORDER BY (
-      SELECT COUNT(DISTINCT word)
-      FROM regexp_split_to_table(locality, E'\\s+') AS word
-      WHERE word ILIKE ANY (
-        SELECT '%' || pattern || '%'
-        FROM unnest($1::text[]) AS pattern
-      )
-    ) DESC, pgs.created_at DESC
-    OFFSET $3
-    LIMIT $4;
-  `;
-  }
+  
+  
+`;
+const queryForPg = `
+SELECT *
+FROM pgs
+LEFT JOIN pgfacilities
+on houses.id=pgfacilities.pg_id
+WHERE city ILIKE $2
+  AND locality ILIKE ANY (
+    SELECT '%' || pattern || '%'
+    FROM unnest($1::text[]) AS pattern
+  )
+ORDER BY (
+  SELECT COUNT(DISTINCT word)
+  FROM regexp_split_to_table(locality, E'\\s+') AS word
+  WHERE word ILIKE ANY (
+    SELECT '%' || pattern || '%'
+    FROM unnest($1::text[]) AS pattern
+  )
+) DESC, houses.created_at DESC
+OFFSET $3
+LIMIT $4;
 
-  const paginatedQuery = `select * from query`;
 
-  const { rows } = await db.query(query, [allKeywords, city, 10 * pgNo, 10]);
+`;
 
-  return res.status(200).json(rows);
-};
+if(propertyType=="House")
+{
+  const {rows}=await db.query(queryForHouse,[allKeywords,city,3*pgNo,3]);
 
-module.exports = {
+  return res.status(200).json(rows)
+}
+else{
+  const {rows}=await db.query(queryForPg,[allKeywords,city,10*pgNo,10]);
+
+  return res.status(200).json(rows)
+}
+
+
+
+}
+
+
+module.exports={
   newHouseProperty,
   newPgProperty,
   updateHouseProperty,
   updatePgProperty,
-  listPropertiesOnSearch,
-  getMyListings,
-};
+  listPropertiesOnSearch
+
+}
