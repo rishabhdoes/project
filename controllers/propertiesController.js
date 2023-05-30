@@ -426,8 +426,7 @@ const updatePgProperty = async (req, res) => {
 const listPropertiesOnSearch=async (req,res)=>{
 
   const {city,text,pgNo}=req.body;
-//console.log(pgNo)
-  //console.log(city,text)
+
 
    const keywords=text.map(
     (textArray)=>{
@@ -439,10 +438,9 @@ const listPropertiesOnSearch=async (req,res)=>{
 
    const allKeywords=keywords.flat();
    
-  //console.log(allKeywords)
    
   const query = `
-  SELECT id
+  SELECT *
   FROM houses
   WHERE city ILIKE $2
     AND locality ILIKE ANY (
@@ -456,7 +454,7 @@ const listPropertiesOnSearch=async (req,res)=>{
       SELECT '%' || pattern || '%'
       FROM unnest($1::text[]) AS pattern
     )
-  ) DESC
+  ) DESC, houses.created_at DESC
   OFFSET $3
   LIMIT $4;
   
