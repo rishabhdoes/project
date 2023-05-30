@@ -1,6 +1,6 @@
 const db = require("../db");
 
-exports.newHouseProperty = async (req, res) => {
+const newHouseProperty = async (req, res) => {
   const { city } = req.body;
   const userId = req.user.id;
 
@@ -18,7 +18,7 @@ exports.newHouseProperty = async (req, res) => {
   res.status(201).json({ message: "new house created", houseId });
 };
 
-exports.newPgProperty = async (req, res) => {
+const newPgProperty = async (req, res) => {
   const { city } = req.body;
   const userId = req.user.id;
 
@@ -36,7 +36,7 @@ exports.newPgProperty = async (req, res) => {
   res.status(201).json({ message: "new pg created", pgId });
 };
 
-exports.updateHouseProperty = async (req, res) => {
+const updateHouseProperty = async (req, res) => {
   const userId = req.user.id;
   const { houseId } = req.params;
 
@@ -322,7 +322,7 @@ exports.updateHouseProperty = async (req, res) => {
     .json({ messgae: "Updated House Successfully", house: updatedHouse });
 };
 
-exports.updatePgProperty = async (req, res) => {
+const updatePgProperty = async (req, res) => {
   const userId = req.user.id;
   const { pgId } = req.params;
 
@@ -604,7 +604,7 @@ exports.updatePgProperty = async (req, res) => {
   res.status(200).json({ message: "Updated Pg Successfully", pg: updatedPg });
 };
 
-exports.getMyListings = async (req, res) => {
+const getMyListings = async (req, res) => {
   const userId = req.user.id;
 
   const houses = await db.query(
@@ -618,4 +618,81 @@ exports.getMyListings = async (req, res) => {
   );
 
   res.status(200).json({ house: houses.rows, pg: pgs.rows });
+};
+
+const listPropertiesOnSearch = async (req, res) => {
+  const { city, text, pgNo, type } = req.body;
+
+  console.log(req.body);
+
+  const keywords = text.map((textArray) => {
+    const op = textArray.split(",");
+    // console.log(op);
+    return op;
+  });
+
+  const allKeywords = keywords.flat();
+
+  let query = "";
+
+  console.log(req.body);
+
+  if (type === "house") {
+    query = `
+  SELECT *
+  FROM houses FULL OUTER JOIN houseFacilities
+  ON houses.id = houseFacilities.house_id
+  WHERE city ILIKE $2
+    AND locality ILIKE ANY (
+      SELECT '%' || pattern || '%'
+      FROM unnest($1::text[]) AS pattern
+    )
+  ORDER BY (
+    SELECT COUNT(DISTINCT word)
+    FROM regexp_split_to_table(locality, E'\\s+') AS word
+    WHERE word ILIKE ANY (
+      SELECT '%' || pattern || '%'
+      FROM unnest($1::text[]) AS pattern
+    )
+  ) DESC, houses.created_at DESC
+  OFFSET $3
+  LIMIT $4;
+  `;
+  } else {
+    query = `
+    SELECT *
+    FROM pgs FULL OUTER JOIN pgFacilities
+    ON pgs.id = pgFacilities.pg_id
+    WHERE city ILIKE $2
+      AND locality ILIKE ANY (
+        SELECT '%' || pattern || '%'
+        FROM unnest($1::text[]) AS pattern
+      )
+    ORDER BY (
+      SELECT COUNT(DISTINCT word)
+      FROM regexp_split_to_table(locality, E'\\s+') AS word
+      WHERE word ILIKE ANY (
+        SELECT '%' || pattern || '%'
+        FROM unnest($1::text[]) AS pattern
+      )
+    ) DESC, pgs.created_at DESC
+    OFFSET $3
+    LIMIT $4;
+  `;
+  }
+
+  const paginatedQuery = `select * from query`;
+
+  const { rows } = await db.query(query, [allKeywords, city, 10 * pgNo, 10]);
+
+  return res.status(200).json(rows);
+};
+
+module.exports = {
+  newHouseProperty,
+  newPgProperty,
+  updateHouseProperty,
+  updatePgProperty,
+  listPropertiesOnSearch,
+  getMyListings,
 };
