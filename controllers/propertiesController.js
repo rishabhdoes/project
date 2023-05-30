@@ -623,7 +623,6 @@ const getMyListings = async (req, res) => {
 const listPropertiesOnSearch = async (req, res) => {
   const { city, text, pgNo, type } = req.body;
 
-  console.log(req.body);
 
   const keywords = text.map((textArray) => {
     const op = textArray.split(",");

@@ -16,6 +16,6 @@ router.post("/register", registerValidation, validationMiddleware, register);
 router.post("/login", loginValidation, validationMiddleware, login);
 router.post("/verify-token", verify);
 
-router.get("/listProperties", listPropertiesOnSearch);
+router.post("/listProperties", listPropertiesOnSearch);
 
 module.exports = router;
