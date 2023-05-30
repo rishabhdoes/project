@@ -623,7 +623,7 @@ const getMyListings = async (req, res) => {
 };
 
 const listPropertiesOnSearch = async (req, res) => {
-  const { city, text, pgNo, type } = req.body;
+  const { city, text, pgNo, type } = req.query;
 
   const keywords = text.map((textArray) => {
     const op = textArray.split(",");
@@ -635,10 +635,12 @@ const listPropertiesOnSearch = async (req, res) => {
 
   let query = "";
 
+  console.log(req.body);
+
   if (type === "house") {
     query = `
   SELECT *
-  FROM houses JOIN houseFacilities
+  FROM houses FULL OUTER JOIN houseFacilities
   ON houses.id = houseFacilities.house_id
   WHERE city ILIKE $2
     AND locality ILIKE ANY (
@@ -659,8 +661,8 @@ const listPropertiesOnSearch = async (req, res) => {
   } else {
     query = `
     SELECT *
-    FROM pgs JOIN pgFacilities
-    ON pgs.id = pgFacilities.house_id
+    FROM pgs FULL OUTER JOIN pgFacilities
+    ON pgs.id = pgFacilities.pg_id
     WHERE city ILIKE $2
       AND locality ILIKE ANY (
         SELECT '%' || pattern || '%'
