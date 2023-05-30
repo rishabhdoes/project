@@ -2,6 +2,8 @@ const db = require("../db");
 
 const newHouseProperty = async (req, res) => {
   const { city } = req.body;
+
+  console.log(req.user);
   const userId = req.user.id;
 
   const cities = ["gurgaon", "mumbai", "banglore", "delhi", "hyderabad"];
@@ -608,12 +610,12 @@ const getMyListings = async (req, res) => {
   const userId = req.user.id;
 
   const houses = await db.query(
-    "SELECT * FROM houses FULL OUTER JOIN houseFacilities ON houses.id = houseFacilities.house_id WHERE houses.owner_id = $1",
+    "SELECT * FROM houses LEFT JOIN houseFacilities ON houses.id = houseFacilities.house_id WHERE houses.owner_id = $1",
     [userId]
   );
 
   const pgs = await db.query(
-    "SELECT * FROM pgs FULL OUTER JOIN pgfacilities ON pgs.id = pgfacilities.pg_id WHERE pgs.owner_id = $1",
+    "SELECT * FROM pgs LEFT OUTER JOIN pgfacilities ON pgs.id = pgfacilities.pg_id WHERE pgs.owner_id = $1",
     [userId]
   );
 
@@ -622,8 +624,6 @@ const getMyListings = async (req, res) => {
 
 const listPropertiesOnSearch = async (req, res) => {
   const { city, text, pgNo, type } = req.body;
-
-  console.log(req.body);
 
   const keywords = text.map((textArray) => {
     const op = textArray.split(",");
