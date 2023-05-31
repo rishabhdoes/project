@@ -1,13 +1,16 @@
+const { Coordinates } = require("../constants");
 const db = require("../db");
 
 const newHouseProperty = async (req, res) => {
+  try{
   const { city } = req.body;
 
-  console.log(req.user);
+  
   const userId = req.user.id;
 
-  const cities = ["gurgaon", "mumbai", "banglore", "delhi", "hyderabad"];
+  const cities = Object.keys(Coordinates);
 
+ 
   if (!cities.includes(city)) {
     return res.status(404).json("Service not available in this area.");
   }
@@ -18,13 +21,22 @@ const newHouseProperty = async (req, res) => {
   );
 
   res.status(201).json({ message: "new house created", houseId });
+  }
+  catch(error)
+  {
+   
+    res.status(400).json({
+      message: error.toString()
+    })
+  }
 };
 
 const newPgProperty = async (req, res) => {
+  try{
   const { city } = req.body;
   const userId = req.user.id;
 
-  const cities = ["gurgaon", "mumbai", "banglore", "delhi", "hyderabad"];
+  const cities = Object.keys(Coordinates);
 
   if (!cities.includes(city)) {
     return res.status(404).json("Service not available in this area.");
@@ -36,9 +48,17 @@ const newPgProperty = async (req, res) => {
   );
 
   res.status(201).json({ message: "new pg created", pgId });
+  }
+  catch(error)
+  {
+    res.status(400).json({
+      message: error.toString()
+    })
+  }
 };
 
 const updateHouseProperty = async (req, res) => {
+  try{
   const userId = req.user.id;
   const { houseId } = req.params;
 
@@ -321,10 +341,19 @@ const updateHouseProperty = async (req, res) => {
 
   res
     .status(200)
-    .json({ messgae: "Updated House Successfully", house: updatedHouse });
+    .json({ message: "Updated House Successfully", house: updatedHouse }); 
+}
+catch(error)
+{
+  res.status(400).json({
+    message: error.toString()
+  })
+}
 };
 
 const updatePgProperty = async (req, res) => {
+
+  try{
   const userId = req.user.id;
   const { pgId } = req.params;
 
@@ -604,9 +633,17 @@ const updatePgProperty = async (req, res) => {
   }
 
   res.status(200).json({ message: "Updated Pg Successfully", pg: updatedPg });
+}
+catch(error)
+{
+  res.status(400).json({
+    message: error.toString()
+  })
+}
 };
 
 const getMyListings = async (req, res) => {
+  try{
   const userId = req.user.id;
 
   const houses = await db.query(
@@ -620,10 +657,19 @@ const getMyListings = async (req, res) => {
   );
 
   res.status(200).json({ house: houses.rows, pg: pgs.rows });
+  }
+  catch(err)
+  {
+    res.status(400).json({
+      message: err.toString()
+    })
+  }
 };
 
 const listPropertiesOnSearch=async (req,res)=>{
 
+
+  try{
   const {propertyType,city,text,pgNo}=req.body;
 
 
@@ -697,6 +743,13 @@ else{
   return res.status(200).json(rows)
 }
 
+  }
+  catch(err)
+  {
+    res.status(400).json({
+      message: err.toString()
+    })
+  }
 
 
 }
