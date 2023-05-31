@@ -138,6 +138,7 @@ const updateHouseProperty = async (req, res) => {
     secondary_number,
     available_from,
     rank,
+    modified_at:new Date(Date.now())
   };
 
   // default array that contains all columns that exist in houses db
@@ -174,6 +175,7 @@ const updateHouseProperty = async (req, res) => {
     "secondary_number",
     "available_from",
     "rank",
+    "modified_at"
   ];
 
   // check whether values are null or not
@@ -256,6 +258,7 @@ const updateHouseProperty = async (req, res) => {
     shopping_center,
     fire_safety,
     club_house,
+   
   };
 
   // default array that contains all columns that exist in houseFacilities db
@@ -288,6 +291,7 @@ const updateHouseProperty = async (req, res) => {
     "shopping_center",
     "fire_safety",
     "club_house",
+   
   ];
 
   // check whether values are null or not
@@ -400,6 +404,7 @@ const updatePgProperty = async (req, res) => {
     gender = null,
     food = null,
     rank = null,
+    modified_at
   } = req.body;
 
   const pgObject = {
@@ -435,6 +440,7 @@ const updatePgProperty = async (req, res) => {
     gender,
     food,
     rank,
+    modified_at:new Date(Date.now())
   };
 
   const pgArrDBKeys = [

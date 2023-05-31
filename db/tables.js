@@ -221,6 +221,8 @@ const queries = {
       mediaUrl VARCHAR ( 255 )  NOT NULL
       )
     `,
+
+   
 };
 
 module.exports = queries;
