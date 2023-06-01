@@ -5,7 +5,9 @@ const {
   emailValidation,
   tokenValidation,
 } = require("../validators/auth");
+
 const { validationMiddleware } = require("../middleware/validation-middleware");
+
 const {
   register,
   login,

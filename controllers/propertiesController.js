@@ -1,41 +1,39 @@
 const db = require("../db");
+const cities = ["Gurgaon", "Mumbai", "Bangalore", "Delhi", "Hyderabad"];
 
 const newHouseProperty = async (req, res) => {
   const { city } = req.body;
 
-  console.log(req.user);
   const userId = req.user.id;
-
-  const cities = ["gurgaon", "mumbai", "banglore", "delhi", "hyderabad"];
 
   if (!cities.includes(city)) {
     return res.status(404).json("Service not available in this area.");
   }
 
-  const houseId = await db.query(
-    "INSERT INTO houses(city,owner_id,locality) values ($1, $2, $3) RETURNING id",
+  const { rows } = await db.query(
+    "INSERT INTO houses(city,owner_id,locality) values ($1, $2, $3) RETURNING *",
     [city, userId, city]
   );
 
-  res.status(201).json({ message: "new house created", houseId });
+  const house = rows[0];
+  res.status(201).json({ message: "new house created", house });
 };
 
 const newPgProperty = async (req, res) => {
   const { city } = req.body;
   const userId = req.user.id;
 
-  const cities = ["gurgaon", "mumbai", "banglore", "delhi", "hyderabad"];
-
   if (!cities.includes(city)) {
     return res.status(404).json("Service not available in this area.");
   }
 
-  const pgId = await db.query(
-    "INSERT INTO pgs(city,owner_id,locality) values ($1, $2, $3) RETURNING id",
+  const { rows } = await db.query(
+    "INSERT INTO pgs(city,owner_id,locality) values ($1, $2, $3) RETURNING *",
     [city, userId, city]
   );
 
-  res.status(201).json({ message: "new pg created", pgId });
+  const pg = rows[0];
+  res.status(201).json({ message: "new pg created", pg });
 };
 
 const updateHouseProperty = async (req, res) => {

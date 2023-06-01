@@ -1,33 +1,42 @@
 const queries = {
   users: `
-      CREATE TABLE users (
-      id SERIAL PRIMARY KEY,
-      name VARCHAR ( 255 ),
-      password_hash VARCHAR ( 255 ) NOT NULL,
-      email VARCHAR ( 255 ) UNIQUE NOT NULL,
-      phone_number NUMERIC(13, 0) CHECK (phone_number >= 100000000000 AND phone_number < 1000000000000 AND phone_number = TRUNC(phone_number)),
-      is_user_admin BOOLEAN DEFAULT FALSE NOT NULL,
-      verified BOOLEAN DEFAULT FALSE NOT NULL,
-      count_property_listed INTEGER DEFAULT 0 CHECK (count_property_listed >= 0),
-      shortlisted_count INTEGER DEFAULT 0 CHECK (shortlisted_count >= 0),
-      contacted_count INTEGER DEFAULT 0 CHECK (contacted_count >= 0),
-      created_at DATE DEFAULT CURRENT_DATE,
-      forgot_password_hash VARCHAR (255),
-      last_login TIMESTAMP );
+        CREATE TABLE users (
+        id uuid, DEFAULT uuid_generate_v4(),
+        name VARCHAR ( 255 ),
+        house_shortlists VARCHAR [],
+        pg_shortlists VARCHAR [],
+        password_hash VARCHAR ( 255 ) NOT NULL,
+        email VARCHAR ( 255 ) UNIQUE NOT NULL,
+        phone_number VARCHAR (13, 0) CHECK (phone_number >= 100000000000 AND phone_number < 1000000000000 AND phone_number = TRUNC(phone_number)),
+        is_user_admin BOOLEAN DEFAULT FALSE NOT NULL,
+        verified BOOLEAN DEFAULT FALSE NOT NULL,
+        count_property_listed INTEGER DEFAULT 0 CHECK (count_property_listed >= 0),
+        shortlisted_count INTEGER DEFAULT 0 CHECK (shortlisted_count >= 0),
+        contacted_count INTEGER DEFAULT 0 CHECK (contacted_count >= 0),
+        forgot_password_hash VARCHAR (255),
+        shortlisted_houses VARCHAR [],
+        shortlisted_pgs VARCHAR [],
+        count_shortlists INTEGER DEFAULT 0,
+        count_owner_contacted INTEGER DEFAULT 0,
+        updated_at TIMESTAMP,
+        created_at TIMESTAMP,
+        PRIMARY KEY(id)
     `,
 
   otpTokens: `
       CREATE TABLE otpTokens (
-      id SERIAL PRIMARY KEY,
+      id uuid, DEFAULT uuid_generate_v4(),
       otptoken_hash VARCHAR ( 255 ) NOT NULL,
       user_id INT NOT NULL,
       FOREIGN KEY(user_id) REFERENCES users(id),
-      created_at DATE DEFAULT CURRENT_DATE);
+      updated_at TIMESTAMP,
+      created_at TIMESTAMP,
+      PRIMARY KEY(id)
     `,
 
   houses: `
       CREATE TABLE houses (
-       id serial PRIMARY KEY,
+       id uuid, DEFAULT uuid_generate_v4(),
        owner_id INT  NOT NULL,
        FOREIGN KEY (owner_id) REFERENCES users(id),
        title VARCHAR ( 255 ),
@@ -60,16 +69,17 @@ const queries = {
        available_from TIMESTAMP,
        furnishing_type VARCHAR(255) DEFAULT 'none' NOT NULL,
        lockin_period VARCHAR (255),
-       updated_at TIMESTAMP,
        rank INTEGER DEFAULT 0,
        secondary_number NUMERIC(13, 0) CHECK (secondary_number >= 100000000000 AND secondary_number < 1000000000000 AND secondary_number = TRUNC(secondary_number)),
-       created_at DATE DEFAULT CURRENT_DATE
+       updated_at TIMESTAMP,
+       created_at TIMESTAMP,
+       PRIMARY KEY(id)
        );
     `,
 
   houseFacilities: `
       CREATE TABLE houseFacilities (
-        id SERIAL PRIMARY KEY,
+        id uuid, DEFAULT uuid_generate_v4(),
         house_id INTEGER NOT NULL,
         FOREIGN KEY (house_id) REFERENCES houses(id),
         ac_count INTEGER DEFAULT 0 CHECK(ac_count >= 0),
@@ -97,27 +107,16 @@ const queries = {
         visitor_parking BOOLEAN DEFAULT FALSE NOT NULL, 
         shopping_center BOOLEAN DEFAULT FALSE NOT NULL, 
         fire_safety BOOLEAN DEFAULT FALSE NOT NULL, 
-        club_house BOOLEAN DEFAULT FALSE NOT NULL
-      );
-    `,
-
-  favorites: `
-      CREATE TABLE favorites(
-        id serial PRIMARY KEY,
-        user_id INT  NOT NULL,
-        FOREIGN KEY(user_id) REFERENCES users(id),
-        house_id INT,
-        FOREIGN KEY (house_id) REFERENCES houses(id),
-        pg_id INT,
-        FOREIGN KEY (pg_id) REFERENCES pgs(id),
-        propertyStatus VARCHAR ( 255 ) NOT NULL,
-        brokerAssigned BOOLEAN DEFAULT FALSE NOT NULL
+        club_house BOOLEAN DEFAULT FALSE NOT NULL,
+        updated_at TIMESTAMP,
+       created_at TIMESTAMP,
+       PRIMARY KEY(id)
       );
     `,
 
   pgs: `
       CREATE TABLE pgs(
-        id serial PRIMARY KEY,
+        id uuid, DEFAULT uuid_generate_v4(),
         owner_id INT NOT NULL,
         FOREIGN KEY (owner_id) REFERENCES users(id),
         pg_name VARCHAR (255),
@@ -151,13 +150,15 @@ const queries = {
         gender VARCHAR (255) DEFAULT 'any' NOT NULL,
         food BOOLEAN DEFAULT FALSE NOT NULL,
         rank INTEGER DEFAULT 0,
-        created_at DATE DEFAULT CURRENT_DATE
+        updated_at TIMESTAMP,
+       created_at TIMESTAMP,
+       PRIMARY KEY(id)
       );
     `,
 
   pgFacilities: `
   CREATE TABLE pgFacilities (
-    id SERIAL PRIMARY KEY,
+    id uuid, DEFAULT uuid_generate_v4(),
     pg_id INTEGER NOT NULL,
     FOREIGN KEY (pg_id) REFERENCES pgs(id),
     ac BOOLEAN DEFAULT FALSE NOT NULL, 
@@ -193,32 +194,41 @@ const queries = {
     room_cleaning BOOLEAN  DEFAULT FALSE NOT NULL,
     biometric_security BOOLEAN DEFAULT FALSE NOT NULL,
     tt_table BOOLEAN DEFAULT FALSE NOT NULL,
-    warden_facilities BOOLEAN DEFAULT FALSE NOT NULL
+    warden_facilities BOOLEAN DEFAULT FALSE NOT NULL,
+    updated_at TIMESTAMP,
+       created_at TIMESTAMP,
+       PRIMARY KEY(id)
   );
     `,
 
   propertiesContactedTable: `
       CREATE TABLE propertiesContactedTable(
-      id serial PRIMARY KEY,
+      id uuid, DEFAULT uuid_generate_v4(),
       user_id INT  NOT NULL,
       FOREIGN KEY(user_id) REFERENCES users(id),
       house_id INT,
       FOREIGN KEY (house_id) REFERENCES houses(id),
       pg_id INT,
-      FOREIGN KEY (pg_id) REFERENCES pgs(id)
+      FOREIGN KEY (pg_id) REFERENCES pgs(id),
+      updated_at TIMESTAMP,
+       created_at TIMESTAMP,
+       PRIMARY KEY(id)
       );
     `,
 
   propertyMediaTable: `
       CREATE TABLE propertyMediaTable(
-      id serial PRIMARY KEY,
+      id uuid, DEFAULT uuid_generate_v4(),
       user_id INT NOT NULL,
       FOREIGN KEY(user_id) REFERENCES users(id),
       house_id INT,
       FOREIGN KEY (house_id) REFERENCES houses(id),
       pg_id INT,
       FOREIGN KEY (pg_id) REFERENCES pgs(id),
-      mediaUrl VARCHAR ( 255 )  NOT NULL
+      mediaUrl VARCHAR ( 255 )  NOT NULL,
+      updated_at TIMESTAMP,
+       created_at TIMESTAMP,
+       PRIMARY KEY(id)
       )
     `,
 };

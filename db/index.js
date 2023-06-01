@@ -14,6 +14,16 @@ async function connectToPostgres() {
   try {
     client = await pool.connect();
     console.log("Connected to PostgreSQL");
+    const tables = [
+      "users",
+      "otpTokens",
+      "houses",
+      "houseFacilities",
+      "pgs",
+      "pgFacilities",
+      "propertiesContactedTable",
+    ];
+
     // await client.query("DROP TABLE IF EXISTS users CASCADE"),
     //   await client.query("DROP TABLE IF EXISTS otpTokens CASCADE"),
     //   await client.query("DROP TABLE IF EXISTS houses CASCADE"),
