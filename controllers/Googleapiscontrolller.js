@@ -6,9 +6,8 @@ const suggestionAutocomplete = async (req, res) => {
   try {
     const { city, text } = req.query;
 
-    if(!Coordinates[city] || !Coordinates[city][0] || !Coordinates[city][1] )
-    {
-      throw new Error("wrong city Name")
+    if (!Coordinates[city] || !Coordinates[city][0] || !Coordinates[city][1]) {
+      throw new Error("wrong city Name");
     }
 
     var config1 = {
@@ -34,30 +33,25 @@ const suggestionAutocomplete = async (req, res) => {
     ]);
 
     const suggestions = response.map((res) =>
-      res.data.predictions.map((locationData) =>{
+      res.data.predictions.map((locationData) => {
         return locationData;
       })
     );
-    
-  const suggestionSet=new Set();
-  const allSuggestions=[];
-    for(let description of suggestions.flat())
-    {
-      if(!suggestionSet.has(description.place_id))
-      {
+
+    const suggestionSet = new Set();
+    const allSuggestions = [];
+    for (let description of suggestions.flat()) {
+      if (!suggestionSet.has(description.place_id)) {
         allSuggestions.push(description);
       }
       suggestionSet.add(description.place_id);
     }
-
-    
 
     res.status(200).json(allSuggestions);
   } catch (err) {
     res.status(400).json({
       message: err.message,
     });
-   
   }
 };
 
@@ -80,14 +74,13 @@ const getCoordinatesByLocation = async (place) => {
   }
 };
 const nearbyLocalities = async (req, res) => {
-  
-  try{
+  try {
     const { text } = req.query;
     const coordinates = await getCoordinatesByLocation(text);
-  
-    if(!coordinates){throw new Error("Unable to get Coordinates of the Locality")}
 
-    
+    if (!coordinates) {
+      throw new Error("Unable to get Coordinates of the Locality");
+    }
 
     var config1 = {
       method: "get",
@@ -128,14 +121,11 @@ const nearbyLocalities = async (req, res) => {
     const allSuggestions = [...new Set(suggestions.flat())];
 
     res.status(200).json(allSuggestions);
-  }
-  catch(err)
-  {
+  } catch (err) {
     res.status(400).json({
       message: err.message,
     });
   }
-  
 };
 module.exports = {
   suggestionAutocomplete,
