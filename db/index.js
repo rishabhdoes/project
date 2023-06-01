@@ -45,7 +45,7 @@ async function connectToPostgres() {
     // await client.query(queries.propertiesContactedTable);
     // await client.query(queries.propertyMediaTable);
   } catch (error) {
-    console.error("Error connecting to PostgreSQL:", error);
+    throw new Error("can't connect to the database"+error);
   } finally {
     if (client) client.release();
   }

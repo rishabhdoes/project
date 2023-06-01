@@ -16,7 +16,7 @@ router.use(userAuth);
 // properties
 router.post("/newProperty/house/create", newHouseProperty);
 router.post("/newProperty/house/update/:houseId", updateHouseProperty);
-router.post("newProperty/pg/create", newPgProperty);
+router.post("/newProperty/pg/create", newPgProperty);
 router.post("/newProperty/pg/update/:id", updatePgProperty);
 
 // fetch all user listings

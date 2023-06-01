@@ -6,9 +6,13 @@ const { generateOTP, mailTransport } = require("../utils/mail");
 const { sendMsg } = require("../utils/errors");
 const jwt = require("jsonwebtoken");
 exports.register = async (req, res) => {
+  try {
+
+   
+  
   const { email, name, phone_number, password } = req.body;
 
-  try {
+ 
     const password_hash = await hash(password, 10);
 
     await db.query(
@@ -24,6 +28,9 @@ exports.register = async (req, res) => {
       email,
     ]);
 
+    
+
+    
     const { id } = user.rows[0];
 
     await db.query(
@@ -38,13 +45,16 @@ exports.register = async (req, res) => {
       html: `<h1>${OTP}</h1>`,
     });
 
-    return sendMsg(res, 201, true, { userId: id });
+    return sendMsg(res, 201, true);
   } catch (err) {
-    console.log(err.message);
+    res.status(400).json({
+      message: err.toString()
+    })
   }
 };
 
 exports.verify = async (req, res) => {
+ try{
   const { userId, otp } = req.body;
 
   if (!userId || !otp.trim())
@@ -59,7 +69,7 @@ exports.verify = async (req, res) => {
   if (user.rows[0].verified)
     return sendMsg(res, 401, false, "Account already verified");
 
-  const token = await db.query("SELECT * FROM otpTokens WHERE user_id = $1", [
+  let token = await db.query("SELECT * FROM otpTokens WHERE user_id = $1", [
     userId,
   ]);
 
@@ -84,19 +94,25 @@ exports.verify = async (req, res) => {
     ...verifiedUser,
   };
 
-  try {
-    const token = sign(payload, JWT_SECRET, { expiresIn: "365d" });
+  
+    token = sign(payload, JWT_SECRET, { expiresIn: "365d" });
 
     return res.status(200).cookie("token", token, { httpOnly: true }).json({
       success: true,
       message: "Logged in successfully",
     });
-  } catch (error) {
-    return sendMsg(res, 500, false, error.message);
+  }
+  catch (error) {
+    res.status(400).json({
+      message: error.toString()
+    })
   }
 };
 
 exports.login = async (req, res) => {
+
+  try{
+
   let user = req.user;
 
   payload = {
@@ -104,7 +120,7 @@ exports.login = async (req, res) => {
     email: user.email,
   };
 
-  try {
+ 
     const token = sign(payload, JWT_SECRET, { expiresIn: "365d" });
 
     return res.status(200).cookie("token", token, { httpOnly: true }).json({
@@ -113,7 +129,9 @@ exports.login = async (req, res) => {
       user: user,
     });
   } catch (error) {
-    return sendMsg(res, 500, false, error.message);
+    res.status(400).json({
+      message: error.toString()
+    })
   }
 };
 

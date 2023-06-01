@@ -231,6 +231,8 @@ const queries = {
        PRIMARY KEY(id)
       )
     `,
+
+   
 };
 
 module.exports = queries;
