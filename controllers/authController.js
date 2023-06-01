@@ -2,7 +2,11 @@ const { JWT_SECRET } = require("../config");
 const db = require("../db");
 const { sign } = require("jsonwebtoken");
 const { hash, compare } = require("bcryptjs");
-const { generateOTP, mailTransport } = require("../utils/mail");
+const {
+  generateOTP,
+  mailTransport,
+  generateRandomString,
+} = require("../utils/mail");
 const { sendMsg } = require("../utils/errors");
 const jwt = require("jsonwebtoken");
 
@@ -132,7 +136,9 @@ exports.forgotPassword = async (req, res) => {
   const user = req.user;
   const id = user.id;
   const { email } = req.body;
-  const token = jwt.sign({ email: email }, JWT_SECRET, { expiresIn: "15m" });
+  const randomString = generateRandomString();
+  const token =
+    jwt.sign({ email: email }, JWT_SECRET, { expiresIn: "15m" }) + randomString;
   const baseUrl = process.env.CLIENT_URL;
   const link = `${baseUrl}/resetpassword/${id}/${token}`;
 
@@ -155,6 +161,7 @@ exports.forgotPassword = async (req, res) => {
 
 exports.resetPassword = async (req, res) => {
   const { user_id, token } = req.params;
+  token = token.slice(0, -10);
   const newPassword = req.body.newPassword;
   try {
     const password_hash = await hash(newPassword, 10);
