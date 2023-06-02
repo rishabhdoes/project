@@ -2,11 +2,13 @@ const { JWT_SECRET } = require("../config");
 const db = require("../db");
 const { sign } = require("jsonwebtoken");
 const { hash, compare } = require("bcryptjs");
+
 const {
   generateOTP,
   mailTransport,
   generateRandomString,
 } = require("../utils/mail");
+
 const { sendMsg } = require("../utils/errors");
 const jwt = require("jsonwebtoken");
 
