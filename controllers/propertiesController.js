@@ -58,6 +58,8 @@ const updateHouseProperty = async (req, res) => {
     const userId = req.user.id;
     const { houseId } = req.params;
 
+    console.log(userId, houseId);
+
     const { rows } = await db.query("SELECT * FROM houses WHERE id = $1", [
       houseId,
     ]);
@@ -135,7 +137,6 @@ const updateHouseProperty = async (req, res) => {
       secondary_number,
       available_from,
       rank,
-      modified_at: new Date(Date.now()),
     };
 
     // default array that contains all columns that exist in houses db
@@ -172,7 +173,6 @@ const updateHouseProperty = async (req, res) => {
       "secondary_number",
       "available_from",
       "rank",
-      "modified_at",
     ];
 
     // check whether values are null or not
@@ -762,7 +762,7 @@ const shortlistProperty = async (req, res) => {
       );
 
       let oldHouseShortlists = rows[0].house_shortlists;
-      let countShortlists = rows[0].count_shortlists;
+      let countShortlists = parseInt(rows[0].count_shortlists);
 
       let newHouseShortlists = [];
 
@@ -776,28 +776,30 @@ const shortlistProperty = async (req, res) => {
       // add shortlist
       else {
         if (countShortlists === MAX_COUNT)
-          return res.json(
-            "Max limit reached. Please remove some from shortlists before shortlisting more properties"
-          );
+          return res
+            .status(401)
+            .json(
+              "Max limit reached. Please remove some from shortlists before shortlisting more properties"
+            );
 
         newHouseShortlists = [...newHouseShortlists, propertyId];
         countShortlists += 1;
       }
 
       await db.query(
-        `UPDATE users SET house_shortlists = ${newHouseShortlists}, count_shortlists = ${countShortlists} WHERE id=$1`,
-        [userId]
+        `UPDATE users SET house_shortlists = $1, count_shortlists = $2 WHERE id=$3`,
+        [newHouseShortlists, countShortlists, userId]
       );
 
-      res.status(200).json("Updated House Shortlists");
+      return res.status(200).json("Updated House Shortlists");
     } else if (propertyType === "pg") {
       const { rows } = await db.query(
-        "SELECT house_shortlists count_shortlists FROM users WHERE id=$1",
+        "SELECT pg_shortlists, count_shortlists FROM users WHERE id=$1",
         [userId]
       );
 
-      let oldPgShortlists = rows.pg_shortlists;
-      let countShortlists = rows.count_shortlists;
+      let oldPgShortlists = rows[0].pg_shortlists;
+      let countShortlists = parseInt(rows[0].count_shortlists);
 
       let newPgShortlists = [];
 
@@ -808,23 +810,25 @@ const shortlistProperty = async (req, res) => {
         countShortlists -= 1;
       } else {
         if (countShortlists === MAX_COUNT)
-          return res.json(
-            "Max limit reached. Please remove some from shortlists before shortlisting more properties"
-          );
+          return res
+            .status(401)
+            .json(
+              "Max limit reached. Please remove some from shortlists before shortlisting more properties"
+            );
 
         newPgShortlists = [...newPgShortlists, propertyId];
         countShortlists += 1;
       }
 
       await db.query(
-        `UPDATE users SET pg_shortlists = ${newPgShortlists}, count_shortlists = ${countShortlists} WHERE id=$1`,
-        [userId]
+        `UPDATE users SET pg_shortlists = $1, count_shortlists = $2 WHERE id=$3`,
+        [newPgShortlists, countShortlists, userId]
       );
 
-      res.status(200).json("Updated PG Shortlists");
+      return res.status(200).json("Updated PG Shortlists");
     }
   } catch (err) {
-    res.status(400).json(res, {
+    res.status(400).json({
       message: err.toString(),
     });
   }
