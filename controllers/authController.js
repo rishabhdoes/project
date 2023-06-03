@@ -168,23 +168,22 @@ const resetPassword = async (req, res) => {
   try {
     const password_hash = await hash(newPassword, 10);
     const secret = JWT_SECRET;
-    try {
-      const verify = jwt.verify(token, secret);
-      console.log("verify:", verify);
 
-      await db.query(`UPDATE users SET password_hash=$1 WHERE id=$2`, [
-        password_hash,
-        user_id,
-      ]);
-      console.log("first");
-      return res.status(200).send("Password Changed!");
-    } catch (error) {
-      console.log(error);
-      res.statusText = "Link Expired";
-      return res.status(400).send("Link Expired");
-      // res.json({ status: "Something Went Wrong" });
-    }
-  } catch (error) {}
+    const verify = jwt.verify(token, secret);
+    console.log("verify:", verify);
+
+    await db.query(`UPDATE users SET password_hash=$1 WHERE id=$2`, [
+      password_hash,
+      user_id,
+    ]);
+
+    return res.status(200).send("Password Changed!");
+  } catch (error) {
+    console.log(error);
+    res.statusText = "Link Expired";
+    return res.status(400).send("Link Expired");
+    // res.json({ status: "Something Went Wrong" });
+  }
 };
 
 module.exports = {

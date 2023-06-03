@@ -680,7 +680,7 @@ const listPropertiesOnSearch = async (req, res) => {
     const allKeywords = keywords.flat();
 
     const queryForHouse = `
-  SELECT *
+  SELECT    houses.id as houses_id,*,housefacilities.id as housefacilities_id 
   FROM houses
   LEFT JOIN housefacilities
   on houses.id=housefacilities.house_id
@@ -730,8 +730,8 @@ LIMIT $4;
       const { rows } = await db.query(queryForHouse, [
         allKeywords,
         city,
-        3 * pgNo,
-        3,
+        10 * pgNo,
+        10,
       ]);
 
       return res.status(200).json(rows);
@@ -854,7 +854,7 @@ const shortlistProperty = async (req, res) => {
         [newPgShortlists, countShortlists, userId]
       );
 
-      return res.status(200).json("Updated PG Shortlists");
+      return res.status(200).json({ message: "Updated PG Shortlists" });
     }
   } catch (err) {
     res.status(400).json({
