@@ -6,7 +6,9 @@ const suggestionAutocomplete = async (req, res) => {
   try {
     const { city, text } = req.query;
 
-    //console.log(Coordinates[city][0]);
+    if (!Coordinates[city] || !Coordinates[city][0] || !Coordinates[city][1]) {
+      throw new Error("wrong city Name");
+    }
 
     var config1 = {
       method: "get",
@@ -31,27 +33,25 @@ const suggestionAutocomplete = async (req, res) => {
     ]);
 
     const suggestions = response.map((res) =>
-      res.data.predictions.map((locationData) =>{
+      res.data.predictions.map((locationData) => {
         return locationData;
       })
     );
-    
-  const suggestionSet=new Set();
-  const allSuggestions=[];
-    for(let description of suggestions.flat())
-    {
-      if(!suggestionSet.has(description.place_id))
-      {
+
+    const suggestionSet = new Set();
+    const allSuggestions = [];
+    for (let description of suggestions.flat()) {
+      if (!suggestionSet.has(description.place_id)) {
         allSuggestions.push(description);
       }
       suggestionSet.add(description.place_id);
     }
 
-    
-
     res.status(200).json(allSuggestions);
   } catch (err) {
-    console.log(err);
+    res.status(400).json({
+      message: err.message,
+    });
   }
 };
 
@@ -69,14 +69,19 @@ const getCoordinatesByLocation = async (place) => {
       response.data.results[0].geometry.location
     );
     return latAndLang;
-  } catch (e) {
-    console.log(e);
+  } catch (error) {
+    return null;
   }
 };
 const nearbyLocalities = async (req, res) => {
   try {
     const { text } = req.query;
     const coordinates = await getCoordinatesByLocation(text);
+
+    if (!coordinates) {
+      throw new Error("Unable to get Coordinates of the Locality");
+    }
+
     var config1 = {
       method: "get",
       url: `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${coordinates[0]},${coordinates[1]}&radius=10000&types=sublocality_level_3&key=${process.env.GMAP_API_KEY}`,
@@ -112,10 +117,14 @@ const nearbyLocalities = async (req, res) => {
     const suggestions = response.map((res) =>
       res.data.results.map((locationData) => locationData.name)
     );
+
     const allSuggestions = [...new Set(suggestions.flat())];
+
     res.status(200).json(allSuggestions);
   } catch (err) {
-    console.log(err);
+    res.status(400).json({
+      message: err.message,
+    });
   }
 };
 module.exports = {
