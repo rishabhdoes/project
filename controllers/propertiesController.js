@@ -103,6 +103,7 @@ const updateHouseProperty = async (req, res) => {
       lockin_period = null,
       secondary_number = null,
       available_from = null,
+      property_type = null,
       rank = null,
     } = req.body;
 
@@ -136,6 +137,7 @@ const updateHouseProperty = async (req, res) => {
       lockin_period,
       secondary_number,
       available_from,
+      property_type,
       rank,
     };
 
@@ -148,6 +150,7 @@ const updateHouseProperty = async (req, res) => {
       "apartment_type",
       "apartment_name",
       "bhk_type",
+      "property_type",
       "description",
       "builtup_area",
       "property_age",
@@ -196,7 +199,8 @@ const updateHouseProperty = async (req, res) => {
         return cur.value;
       });
 
-      updatedHouse = await db.query(updateDbQuery, [...values, houseId]);
+      const { rows } = await db.query(updateDbQuery, [...values, houseId]);
+      updatedHouse = rows[0];
     }
 
     const {
@@ -317,7 +321,8 @@ const updateHouseProperty = async (req, res) => {
           return cur.value;
         });
 
-        updatedHouseFacility = await db.query(dbQuery, [...values, houseId]);
+        const { rows } = await db.query(dbQuery, [...values, houseId]);
+        updatedHouseFacility = rows[0];
       } else {
         const updateFacilities = `UPDATE houseFacilities SET ${houseFacilitiesArr
           .map((facility, index) => `${facility.key} = $${index + 1}`)
