@@ -19,11 +19,12 @@ exports.register = async (req, res) => {
     const password_hash = await hash(password, 10);
 
     const { rows } = await db.query(
-      "INSERT INTO users(name, email, phone_number, password_hash) values ($1, $2, $3, $4) RETURNING id",
+      "INSERT INTO users(name, email, phone_number, password_hash) values ($1, $2, $3, $4) RETURNING *",
       [name, email, phone_number, password_hash]
     );
 
-    const userId = rows[0].id;
+    const user = rows[0];
+    const userId = user.id;
 
     const OTP = generateOTP();
 
@@ -41,7 +42,8 @@ exports.register = async (req, res) => {
       html: `<h1>${OTP}</h1>`,
     });
 
-    return sendMsg(res, 201, true, { userId });
+    return res.status(200).json({user, success:true});
+    // return sendMsg(res, 201, true, { user });
   } catch (err) {
     res.status(400).json({
       message: err.toString(),
@@ -138,7 +140,7 @@ exports.protected = async (req, res) => {
 
 exports.forgotPassword = async (req, res) => {
   const user = req.user;
-  const id = user.id;
+  const id = user?.id;
   const { email } = req.body;
   const randomString = generateRandomString();
   const token =
@@ -147,10 +149,6 @@ exports.forgotPassword = async (req, res) => {
   const link = `${baseUrl}/resetpassword/${id}/${token}`;
 
   try {
-    // await db.query(
-    //   "INSERT INTO users(userId, otptoken_hash, actions) values ($1, $2, 'forgot_password')",
-    //   [id, token]
-    // );
     mailTransport().sendMail({
       from: "yesbroker@gmail.com",
       to: email,
