@@ -834,6 +834,71 @@ const shortlistProperty = async (req, res) => {
   }
 };
 
+const showShortlists = async (req, res) => {
+  try {
+    const { propertyType } = req.query;
+    const userId = req.user.id;
+
+    const { rows } = await db.query("SELECT * FROM users WHERE id = $1", [
+      userId,
+    ]);
+
+    let shortlists = [];
+
+    if (propertyType === "house") {
+      shortlists = rows[0].house_shortlists;
+
+      const data = await Promise.all(
+        shortlists.map(async (shortlistId) => {
+          const { rows } = await db.query(
+            "SELECT houses.id, houses.available_from, houses.builtup_area, houses.rent, houses.deposit, houses.furnishing_type, houses.bhk_type FROM houses WHERE houses.id = $1",
+            [shortlistId]
+          );
+
+          const data = await db.query(
+            "SELECT * FROM propertyMediaTable WHERE house_id = $1",
+            [shortlistId]
+          );
+
+          if (data.rows.length > 0) rows[0].push(data.rows);
+
+          return rows[0];
+        })
+      );
+
+      return res.status(200).json({ data });
+    } else if (propertyType === "pg") {
+      shortlists = rows[0].pg_shortlists;
+
+      const data = await Promise.all(
+        shortlists.map(async (shortlistId) => {
+          const { rows } = await db.query(
+            "SELECT pgs.id, pgs.single_room, pgs.single_room_deposit, pgs.single_room_rent, pgs.double_room, pgs.double_room_rent, pgs.double_room_deposit, pgs.food, pgs.pg_name, pgs.locality, pgs.city, pgs.gender FROM pgs WHERE pgs.id = $1",
+            [shortlistId]
+          );
+
+          const data = await db.query(
+            "SELECT * FROM propertyMediaTable WHERE pg_id = $1",
+            [shortlistId]
+          );
+
+          if (data.rows.length > 0) rows[0].push(data.rows);
+
+          return rows[0];
+        })
+      );
+
+      return res.status(200).json({ data });
+    } else {
+      throw Error({
+        message: "You are lost!",
+      });
+    }
+  } catch (err) {
+    return res.status(400).json(err.message);
+  }
+};
+
 module.exports = {
   newHouseProperty,
   newPgProperty,
@@ -842,4 +907,5 @@ module.exports = {
   listPropertiesOnSearch,
   shortlistProperty,
   getMyListings,
+  showShortlists,
 };

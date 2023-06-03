@@ -8,6 +8,7 @@ const {
   updatePgProperty,
   getMyListings,
   shortlistProperty,
+  showShortlists,
 } = require("../controllers/propertiesController");
 
 const router = Router();
@@ -25,5 +26,6 @@ router.get("/user/mylistings/", getMyListings);
 
 // shortlist properties
 router.post("/user/property/shortlist", shortlistProperty);
+router.get("/user/myshortlists", showShortlists);
 
 module.exports = router;
