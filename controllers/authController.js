@@ -12,7 +12,7 @@ const {
 const { sendMsg } = require("../utils/errors");
 const jwt = require("jsonwebtoken");
 
-exports.register = async (req, res) => {
+const register = async (req, res) => {
   try {
     const { email, name, phone_number, password } = req.body;
 
@@ -42,7 +42,7 @@ exports.register = async (req, res) => {
       html: `<h1>${OTP}</h1>`,
     });
 
-    return res.status(200).json({user, success:true});
+    return res.status(200).json({ user, success: true });
     // return sendMsg(res, 201, true, { user });
   } catch (err) {
     res.status(400).json({
@@ -51,7 +51,7 @@ exports.register = async (req, res) => {
   }
 };
 
-exports.verify = async (req, res) => {
+const verify = async (req, res) => {
   try {
     const { userId, otp } = req.body;
 
@@ -111,7 +111,7 @@ exports.verify = async (req, res) => {
   }
 };
 
-exports.login = async (req, res) => {
+const login = async (req, res) => {
   try {
     let user = req.user;
 
@@ -134,11 +134,11 @@ exports.login = async (req, res) => {
   }
 };
 
-exports.protected = async (req, res) => {
+const protected = async (req, res) => {
   res.send("Hi");
 };
 
-exports.forgotPassword = async (req, res) => {
+const forgotPassword = async (req, res) => {
   const user = req.user;
   const id = user?.id;
   const { email } = req.body;
@@ -161,7 +161,7 @@ exports.forgotPassword = async (req, res) => {
   }
 };
 
-exports.resetPassword = async (req, res) => {
+const resetPassword = async (req, res) => {
   const { user_id, token } = req.params;
   token = token.slice(0, -10);
   const newPassword = req.body.newPassword;
@@ -185,4 +185,13 @@ exports.resetPassword = async (req, res) => {
       // res.json({ status: "Something Went Wrong" });
     }
   } catch (error) {}
+};
+
+module.exports = {
+  register,
+  verify,
+  login,
+  protected,
+  forgotPassword,
+  resetPassword,
 };

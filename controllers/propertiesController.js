@@ -761,6 +761,14 @@ const shortlistProperty = async (req, res) => {
 
     // check for house
     if (propertyType === "house") {
+      const data = await db.query("SELECT id FROM houses WHERE houses.id=$1", [
+        propertyId,
+      ]);
+
+      if (data.rows.length === 0) {
+        res.status(400).json({ message: "House does not exist" });
+      }
+
       const { rows } = await db.query(
         "SELECT house_shortlists, count_shortlists FROM users WHERE id=$1",
         [userId]
@@ -798,6 +806,14 @@ const shortlistProperty = async (req, res) => {
 
       return res.status(200).json("Updated House Shortlists");
     } else if (propertyType === "pg") {
+      const data = await db.query("SELECT id FROM pgs WHERE pgs.id=$1", [
+        propertyId,
+      ]);
+
+      if (data.rows.length === 0) {
+        res.status(400).json({ message: "Pg does not exist" });
+      }
+
       const { rows } = await db.query(
         "SELECT pg_shortlists, count_shortlists FROM users WHERE id=$1",
         [userId]
