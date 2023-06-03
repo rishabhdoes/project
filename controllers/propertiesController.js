@@ -1,5 +1,6 @@
 const { Coordinates } = require("../constants");
 const db = require("../db");
+const MAX_COUNT = 100;
 
 const newHouseProperty = async (req, res) => {
   try {
@@ -56,6 +57,8 @@ const updateHouseProperty = async (req, res) => {
   try {
     const userId = req.user.id;
     const { houseId } = req.params;
+
+    console.log(userId, houseId);
 
     const { rows } = await db.query("SELECT * FROM houses WHERE id = $1", [
       houseId,
@@ -134,7 +137,6 @@ const updateHouseProperty = async (req, res) => {
       secondary_number,
       available_from,
       rank,
-      modified_at: new Date(Date.now()),
     };
 
     // default array that contains all columns that exist in houses db
@@ -171,7 +173,6 @@ const updateHouseProperty = async (req, res) => {
       "secondary_number",
       "available_from",
       "rank",
-      "modified_at",
     ];
 
     // check whether values are null or not
@@ -662,8 +663,6 @@ const getMyListings = async (req, res) => {
 };
 
 const listPropertiesOnSearch = async (req, res) => {
-  const { propertyType, city, text, pgNo } = req.body;
-
   try {
     const { propertyType, city, text, pgNo } = req.body;
 
@@ -748,11 +747,99 @@ LIMIT $4;
   }
 };
 
+const shortlistProperty = async (req, res) => {
+  try {
+    const { userId, propertyType, propertyId } = req.body;
+
+    if (!userId || !propertyType || !propertyId)
+      return res.status(401).json(res, false, "Invalid request");
+
+    // check for house
+    if (propertyType === "house") {
+      const { rows } = await db.query(
+        "SELECT house_shortlists, count_shortlists FROM users WHERE id=$1",
+        [userId]
+      );
+
+      let oldHouseShortlists = rows[0].house_shortlists;
+      let countShortlists = parseInt(rows[0].count_shortlists);
+
+      let newHouseShortlists = [];
+
+      // already shortlisted, remove from shortlist
+      if (oldHouseShortlists.includes(propertyId)) {
+        newHouseShortlists = oldHouseShortlists.filter(
+          (shortlist) => shortlist !== propertyId
+        );
+        countShortlists -= 1;
+      }
+      // add shortlist
+      else {
+        if (countShortlists === MAX_COUNT)
+          return res
+            .status(401)
+            .json(
+              "Max limit reached. Please remove some from shortlists before shortlisting more properties"
+            );
+
+        newHouseShortlists = [...newHouseShortlists, propertyId];
+        countShortlists += 1;
+      }
+
+      await db.query(
+        `UPDATE users SET house_shortlists = $1, count_shortlists = $2 WHERE id=$3`,
+        [newHouseShortlists, countShortlists, userId]
+      );
+
+      return res.status(200).json("Updated House Shortlists");
+    } else if (propertyType === "pg") {
+      const { rows } = await db.query(
+        "SELECT pg_shortlists, count_shortlists FROM users WHERE id=$1",
+        [userId]
+      );
+
+      let oldPgShortlists = rows[0].pg_shortlists;
+      let countShortlists = parseInt(rows[0].count_shortlists);
+
+      let newPgShortlists = [];
+
+      if (oldPgShortlists.includes(propertyId)) {
+        newPgShortlists = oldPgShortlists.filter(
+          (shortlist) => shortlist !== propertyId
+        );
+        countShortlists -= 1;
+      } else {
+        if (countShortlists === MAX_COUNT)
+          return res
+            .status(401)
+            .json(
+              "Max limit reached. Please remove some from shortlists before shortlisting more properties"
+            );
+
+        newPgShortlists = [...newPgShortlists, propertyId];
+        countShortlists += 1;
+      }
+
+      await db.query(
+        `UPDATE users SET pg_shortlists = $1, count_shortlists = $2 WHERE id=$3`,
+        [newPgShortlists, countShortlists, userId]
+      );
+
+      return res.status(200).json("Updated PG Shortlists");
+    }
+  } catch (err) {
+    res.status(400).json({
+      message: err.toString(),
+    });
+  }
+};
+
 module.exports = {
   newHouseProperty,
   newPgProperty,
   updateHouseProperty,
   updatePgProperty,
   listPropertiesOnSearch,
+  shortlistProperty,
   getMyListings,
 };
