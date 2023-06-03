@@ -2,37 +2,36 @@ const { JWT_SECRET } = require("../config");
 const db = require("../db");
 const { sign } = require("jsonwebtoken");
 const { hash, compare } = require("bcryptjs");
+
 const {
   generateOTP,
   mailTransport,
   generateRandomString,
 } = require("../utils/mail");
+
 const { sendMsg } = require("../utils/errors");
 const jwt = require("jsonwebtoken");
+
 exports.register = async (req, res) => {
   try {
     const { email, name, phone_number, password } = req.body;
 
     const password_hash = await hash(password, 10);
 
-    await db.query(
-      "INSERT INTO users(name, email, phone_number, password_hash) values ($1, $2, $3, $4)",
+    const { rows } = await db.query(
+      "INSERT INTO users(name, email, phone_number, password_hash) values ($1, $2, $3, $4) RETURNING id",
       [name, email, phone_number, password_hash]
     );
 
+    const userId = rows[0].id;
+
     const OTP = generateOTP();
 
-    const otptoken_hash = await hash(OTP, 10);
-
-    const user = await db.query("SELECT * FROM users WHERE email = $1", [
-      email,
-    ]);
-
-    const { id } = user.rows[0];
+    const otpTokenHash = await hash(OTP, 10);
 
     await db.query(
-      "INSERT INTO otpTokens(userId, otptoken_hash, actions) values ($1, $2, 'verify_email')",
-      [id, otptoken_hash]
+      "INSERT INTO otpTokens(user_id, otptoken_hash) values ($1, $2)",
+      [userId, otpTokenHash]
     );
 
     mailTransport().sendMail({
@@ -42,7 +41,7 @@ exports.register = async (req, res) => {
       html: `<h1>${OTP}</h1>`,
     });
 
-    return sendMsg(res, 201, true);
+    return sendMsg(res, 201, true, { userId });
   } catch (err) {
     res.status(400).json({
       message: err.toString(),
@@ -57,32 +56,38 @@ exports.verify = async (req, res) => {
     if (!userId || !otp.trim())
       return sendMsg(res, 401, false, "Invalid request, Missing Parameters!");
 
-    const user = await db.query("SELECT * FROM users WHERE id = $1", [userId]);
-
-    if (!user || !user.rows) {
-      return sendMsg(res, 401, false, "user not found!");
-    }
-
-    if (user.rows[0].verified)
-      return sendMsg(res, 401, false, "Account already verified");
-
-    let token = await db.query("SELECT * FROM otpTokens WHERE user_id = $1", [
+    const { rows } = await db.query("SELECT * FROM users WHERE id = $1", [
       userId,
     ]);
 
-    if (!token || !token.rows) {
-      return sendMsg(res, 401, false, "user not found!");
+    if (!rows || !rows.length) {
+      return sendMsg(res, 401, false, "User not found!");
     }
 
-    const isMatch = await compare(otp, token.rows[0].otptoken_hash);
+    let user = rows[0];
+
+    if (user.verified === true)
+      return sendMsg(res, 401, false, "Account already verified");
+
+    const { rows: tokenRows } = await db.query(
+      "SELECT * FROM otpTokens WHERE user_id = $1",
+      [userId]
+    );
+
+    if (!tokenRows || !tokenRows.length) {
+      return sendMsg(res, 401, false, "User not found!");
+    }
+
+    let token = tokenRows[0];
+
+    const isMatch = await compare(otp, token.otptoken_hash);
 
     if (!isMatch) {
-      return sendMsg(res, 401, false, "user not found!");
+      return sendMsg(res, 401, false, "User not found!");
     }
 
-    user.rows[0].verified = true;
-
-    const verifiedUser = user.rows[0];
+    user.verified = true;
+    const verifiedUser = user;
 
     await db.query("DELETE FROM otpTokens WHERE user_id = $1", [userId]);
     await db.query("UPDATE users SET verified = true WHERE id = $1", [userId]);

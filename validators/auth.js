@@ -34,8 +34,6 @@ const emailExists = check("email").custom(async (value) => {
 
 // login validation
 const loginFieldsCheck = check("email").custom(async (value, { req }) => {
-
-  
   const user = await db.query("SELECT * from users WHERE email = $1", [value]);
   if (!user.rows.length) {
     throw new Error("Email does not exist");
@@ -47,26 +45,25 @@ const loginFieldsCheck = check("email").custom(async (value, { req }) => {
   );
 
   if (!validPassword) {
-
     throw new Error("Wrong credentials");
   }
-  
+
   req.user = user.rows[0];
 });
 
 const getUserFromEmail = check("email").custom(async (value, { req }) => {
   const user = await db.query("SELECT * from users WHERE email = $1", [value]);
   req.user = user.rows[0];
-})
-const getUserFromId = check("id").custom(async (value, { req }) => {
+});
 
+const getUserFromId = check("id").custom(async (value, { req }) => {
   const user = await db.query("SELECT * from users WHERE id = $1", [value]);
   req.user = user.rows[0];
-})
+});
 
 module.exports = {
   registerValidation: [email, password, phoneNumber, emailExists],
   loginValidation: [email, loginFieldsCheck],
   emailValidation: [email, emailExists, getUserFromEmail],
-  tokenValidation: [password, getUserFromId]
+  tokenValidation: [password, getUserFromId],
 };

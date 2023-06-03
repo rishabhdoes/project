@@ -1,6 +1,13 @@
 const { Router } = require("express");
-const { registerValidation, loginValidation, emailValidation, tokenValidation } = require("../validators/auth");
+const {
+  registerValidation,
+  loginValidation,
+  emailValidation,
+  tokenValidation,
+} = require("../validators/auth");
+
 const { validationMiddleware } = require("../middleware/validation-middleware");
+
 const {
   register,
   login,
@@ -8,10 +15,14 @@ const {
   forgotPassword,
   resetPassword,
 } = require("../controllers/authController");
-// const { userAuth } = require("../middleware/auth-middleware");
 
-const { suggestionAutocomplete, nearbyLocalities } = require("../controllers/Googleapiscontrolller");
-const { listPropertiesOnSearch } = require("../controllers/propertiesController");
+const {
+  suggestionAutocomplete,
+  nearbyLocalities,
+} = require("../controllers/Googleapiscontrolller");
+const {
+  listPropertiesOnSearch,
+} = require("../controllers/propertiesController");
 
 const router = Router();
 
@@ -25,8 +36,8 @@ router.post("/verify-token", verify);
 router.post("/forgot-password", emailValidation, forgotPassword);
 router.post(`/reset-password/:user_id/:token`, tokenValidation, resetPassword);
 
+router.post("/listProperties", listPropertiesOnSearch);
 router.get("/autocomplete", suggestionAutocomplete);
 router.get("/nearbyLocalities", nearbyLocalities);
-router.post('/listProperties',listPropertiesOnSearch);
 
 module.exports = router;
