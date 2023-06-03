@@ -33,8 +33,8 @@ router.get("/", (req, res) => {
 router.post("/register", registerValidation, validationMiddleware, register);
 router.post("/login", loginValidation, validationMiddleware, login);
 router.post("/verify-token", verify);
-router.post("/forgot-password", emailValidation, forgotPassword);
-router.post(`/reset-password/:user_id/:token`, tokenValidation, resetPassword);
+router.post("/forgot-password", emailValidation, validationMiddleware, forgotPassword);
+router.post(`/reset-password/:user_id/:token`, tokenValidation, validationMiddleware, resetPassword);
 
 router.post("/listProperties", listPropertiesOnSearch);
 router.get("/autocomplete", suggestionAutocomplete);
