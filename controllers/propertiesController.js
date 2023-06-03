@@ -766,13 +766,17 @@ const shortlistProperty = async (req, res) => {
       ]);
 
       if (data.rows.length === 0) {
-        res.status(400).json({ message: "House does not exist" });
+        return res.status(400).json({ message: "House not found" });
       }
 
       const { rows } = await db.query(
         "SELECT house_shortlists, count_shortlists FROM users WHERE id=$1",
         [userId]
       );
+
+      if (rows.length === 0) {
+        return res.status(400).json({ message: "User not found" });
+      }
 
       let oldHouseShortlists = rows[0].house_shortlists;
       let countShortlists = parseInt(rows[0].count_shortlists);
@@ -811,13 +815,17 @@ const shortlistProperty = async (req, res) => {
       ]);
 
       if (data.rows.length === 0) {
-        res.status(400).json({ message: "Pg does not exist" });
+        res.status(400).json({ message: "Pg not found!" });
       }
 
       const { rows } = await db.query(
         "SELECT pg_shortlists, count_shortlists FROM users WHERE id=$1",
         [userId]
       );
+
+      if (rows.length === 0) {
+        return res.status(400).json({ message: "User not found!" });
+      }
 
       let oldPgShortlists = rows[0].pg_shortlists;
       let countShortlists = parseInt(rows[0].count_shortlists);
