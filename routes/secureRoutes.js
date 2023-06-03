@@ -7,6 +7,8 @@ const {
   updateHouseProperty,
   updatePgProperty,
   getMyListings,
+  shortlistProperty,
+  showShortlists,
 } = require("../controllers/propertiesController");
 const { housesValidation } = require("../validators/auth");
 
@@ -24,9 +26,13 @@ router.post(
   updateHouseProperty
 );
 router.post("/newProperty/pg/create", newPgProperty);
-router.post("/newProperty/pg/update/:id", updatePgProperty);
+router.post("/newProperty/pg/update/:pgId", updatePgProperty);
 
 // fetch all user listings
 router.get("/user/mylistings/", getMyListings);
+
+// shortlist properties
+router.post("/user/property/shortlist", shortlistProperty);
+router.get("/user/myshortlists", showShortlists);
 
 module.exports = router;
