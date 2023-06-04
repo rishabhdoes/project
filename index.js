@@ -13,21 +13,23 @@ app.use(cookieParser());
 app.use(cors({ origin: CLIENT_URL, credentials: true }));
 app.use(passport.initialize());
 
-const authRoutes = require("./routes/auth");
-const secureRoutes=require('./routes/secureRoutes')
+const publicRoutes = require("./routes/publicRoutes");
+const secureRoutes = require("./routes/secureRoutes");
+const { notFound, errorHandler } = require("./middleware/error-middleware");
 
-
-
-
-app.use("/api", authRoutes);
-app.use("/secure/api",secureRoutes);
+app.use("/public/api", publicRoutes);
+app.use("/secure/api", secureRoutes);
 
 app.get("/", async (req, res) => {
   const results = await db.query("select * from users");
-  console.log(results);
   res.send("hi");
 });
 
+
+// Error Handling middlewares
+app.use(notFound);
+app.use(errorHandler);
+
 app.listen(PORT, () => {
-  console.log("listening on port 3000");
+  console.log(`listening on port ${PORT}`);
 });
