@@ -1,6 +1,16 @@
 const { check } = require("express-validator");
 const db = require("../db");
 const { compare } = require("bcryptjs");
+const {
+  PropertyType,
+  BHKType,
+  PropertyAge,
+  PreferredTenants,
+  Furnishing,
+  Parking,
+} = require("../constants");
+const { Facing } = require("../constants");
+const { Coordinates } = require("../constants");
 
 const password = check("password")
   .isLength({ min: 6, max: 15 })
@@ -79,7 +89,7 @@ const getUserFromEmail = check("email").custom(async (value, { req, res }) => {
     else{
       throw new Error("User doesn't exist please register")
   }
-})
+});
 
 module.exports = {
   registerValidation: [email, password, phoneNumber, emailExists],
