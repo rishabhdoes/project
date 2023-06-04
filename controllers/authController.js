@@ -176,7 +176,6 @@ exports.resetPassword = async (req, res) => {
         password_hash,
         user_id,
       ]);
-      console.log("first");
       return sendMsg(res, 200, true, "Password Changed");
     } catch (error) {
       console.log(error);

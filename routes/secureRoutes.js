@@ -10,6 +10,7 @@ const {
   shortlistProperty,
   showShortlists,
 } = require("../controllers/propertiesController");
+const { updateProfile } = require("../controllers/profileController");
 
 const router = Router();
 
@@ -27,5 +28,8 @@ router.get("/user/mylistings/", getMyListings);
 // shortlist properties
 router.post("/user/property/shortlist", shortlistProperty);
 router.get("/user/myshortlists", showShortlists);
+
+// profile
+router.post("/updateProfile", updateProfile)
 
 module.exports = router;
