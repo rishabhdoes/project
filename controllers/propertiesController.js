@@ -682,7 +682,7 @@ const listPropertiesOnSearch = async (req, res) => {
     const allKeywords = keywords.flat();
 
     const queryForHouse = `
-  SELECT    houses.id as houses_id,*,housefacilities.id as housefacilities_id 
+  SELECT    houses.id as house_id,*,housefacilities.id as housefacility_id 
   FROM houses
   LEFT JOIN housefacilities
   on houses.id=housefacilities.house_id
