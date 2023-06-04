@@ -16,6 +16,10 @@ const password = check("password")
   .isLength({ min: 6, max: 15 })
   .withMessage("Password has to be atleast 6 characters");
 
+const newPassword = check("newPassword")
+  .isLength({ min: 6, max: 15 })
+  .withMessage("Password has to be atleast 6 characters");
+
 const email = check("email")
   .isEmail()
   .withMessage("Please provide a valid email");
@@ -62,6 +66,7 @@ const loginFieldsCheck = check("email").custom(async (value, { req }) => {
 });
 
 const getUserFromEmail = check("email").custom(async (value, { req, res }) => {
+
   try {
     const user = await db.query("SELECT * from users WHERE email = $1", [
       value,
@@ -78,16 +83,19 @@ const getUserFromEmail = check("email").custom(async (value, { req, res }) => {
   }
 });
 
-const getUserFromId = check("id").custom(async (value, { req }) => {
-  const user = await db.query("SELECT * from users WHERE id = $1", [value]);
-  if (user.rowCount > 0) {
-    req.user = user.rows[0];
-  } else {
-    const errorResponse = {
-      error: "Validation Error",
-      message: "User doesn't exist Please sign up",
-    };
-    res.status(400).json(errorResponse);
+
+
+
+   
+  
+  const getUserFromId = check("user_id").custom(async (value, { req }) => {
+    const user = await db.query("SELECT * from users WHERE id = $1", [value]);
+    if(user.rowCount > 0)
+    {
+      req.user = user.rows[0];
+    }
+    else{
+      throw new Error("User doesn't exist please register")
   }
 });
 
@@ -222,7 +230,10 @@ const housesValidation = async (req, res, next) => {
 module.exports = {
   registerValidation: [email, password, phoneNumber, emailExists],
   loginValidation: [email, loginFieldsCheck],
+
   emailValidation: [email, emailExists, getUserFromEmail],
   tokenValidation: [password, getUserFromId],
   housesValidation,
 };
+
+
