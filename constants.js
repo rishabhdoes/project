@@ -17,20 +17,16 @@ const Coordinates = {
   noida: [28.5355, 77.391, 10000],
 };
 
-const PropertyType = [
-  "Apartment",
-  "Independent House/Villa",
-  "Gated Community Villa",
-];
+const PropertyType = ["Apartment", "Independent House", "Gated Community"];
 
-const BHKType = ["1RK", "1BHK", "2BHK", "3BHK", "4BHK", "4+BHK"];
+const BHKType = ["1 RK", "1 BHK", "2 BHK", "3 BHK", "4 BHK", "4+ BHK"];
 
 const PropertyAge = [
-  "Less Than a year",
-  "1 to 3 year",
-  "3 to 5 year",
-  "5 to 10 year",
-  "More than 10 year",
+  "Less than 1 year",
+  "Between 1 to 3 years",
+  "Between 3 to 5 years",
+  "Between 5 to 10 years",
+  "Greater than 10 years",
 ];
 
 const Facing = [
@@ -46,7 +42,7 @@ const Facing = [
 
 const PreferredTenants = ["Doesn't Matter", "Family", "Bachelors", "Company"];
 
-const Furnishing = ["Fully-furnished", "Semi-furnished", "Unfurnished"];
+const Furnishing = ["Fully Furnished", "Semi Furnished", "Unfurnished"];
 
 const Parking = ["Bike", "Car", "Both", "None"];
 
