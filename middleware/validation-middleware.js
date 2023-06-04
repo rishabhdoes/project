@@ -1,10 +1,13 @@
 const { validationResult } = require("express-validator");
 
 exports.validationMiddleware = (req, res, next) => {
-  let errors = validationResult(req);
+  const errors = validationResult(req);
 
   if (!errors.isEmpty()) {
-    throw new Error(errors.errors[0].msg);
+    const error = new Error(errors.errors[0].msg);
+
+    error.statusCode = 400; // Set the status code for the error
+    return next(error);
   }
 
   next();

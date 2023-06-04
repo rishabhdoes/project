@@ -11,6 +11,7 @@ const {
   showShortlists,
 } = require("../controllers/propertiesController");
 const { housesValidation } = require("../validators/auth");
+const { validationMiddleware } = require("../middleware/validation-middleware");
 
 const router = Router();
 
@@ -22,7 +23,8 @@ router.use(userAuth);
 router.post("/newProperty/house/create", newHouseProperty);
 router.post(
   "/newProperty/house/update/:houseId",
-
+  housesValidation,
+  validationMiddleware,
   updateHouseProperty
 );
 router.post("/newProperty/pg/create", newPgProperty);

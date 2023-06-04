@@ -11,7 +11,9 @@ const newHouseProperty = async (req, res) => {
     const cities = Object.keys(Coordinates);
 
     if (!cities.includes(city)) {
-      return res.status(404).json("Service not available in this area.");
+      return res
+        .status(404)
+        .json({ message: "Service not available in this area." });
     }
 
     const { rows } = await db.query(
