@@ -680,65 +680,73 @@ const listPropertiesOnSearch = async (req, res) => {
     });
 
     const allKeywords = keywords.flat();
+    //console.log(allKeywords);
 
     const queryForHouse = `
-    WITH results AS (
-      SELECT houses.id AS houses_id, houses.*, housefacilities.id AS housefacilities_id,
-        COUNT(*) OVER () AS total_count
-      FROM houses
-      LEFT JOIN housefacilities ON houses.id = housefacilities.house_id
-      WHERE city ILIKE $2
-        AND locality ILIKE ANY (
-          SELECT '%' || pattern || '%'
-          FROM unnest($1::text[]) AS pattern
-        )
-    )
-    SELECT *
-    FROM results
+    SELECT    houses.id as houses_id,*,housefacilities.id as housefacilities_id 
+    FROM houses
+    LEFT JOIN housefacilities
+    on houses.id=housefacilities.house_id
+    WHERE city ILIKE $2
+      AND locality ILIKE ANY (
+        SELECT '%' || pattern || '%'
+        FROM unnest($1::text[]) AS pattern
+      )
     ORDER BY (
       SELECT COUNT(DISTINCT word)
-      FROM regexp_split_to_table(results.locality, E'\\s+') AS word
+      FROM regexp_split_to_table(locality, E'\\s+') AS word
       WHERE word ILIKE ANY (
         SELECT '%' || pattern || '%'
         FROM unnest($1::text[]) AS pattern
       )
-    ) DESC, results.updated_at DESC
+    ) DESC, houses.updated_at DESC
     OFFSET $3
     LIMIT $4;
-    
-  
-  
 `;
-    const queryForPg = `
 
-WITH results AS (
-  SELECT pgs.id AS pg_id, pgs.*, pgfacilities.pg_id AS pgfacilities_id,
-    COUNT(*) OVER () AS total_count
-  FROM pgs
-  LEFT JOIN pgfacilities ON pgs.id = pgfacilities.pg_id
-  WHERE city ILIKE $2
-    AND locality ILIKE ANY (
-      SELECT '%' || pattern || '%'
-      FROM unnest($1::text[]) AS pattern
-    )
-)
-SELECT *
-FROM results
-ORDER BY (
-  SELECT COUNT(DISTINCT word)
-  FROM regexp_split_to_table(results.locality, E'\\s+') AS word
-  WHERE word ILIKE ANY (
+    const queryForhouseCount = `
+SELECT COUNT(*) AS total_count
+FROM houses
+WHERE city ILIKE $2
+  AND locality ILIKE ANY (
     SELECT '%' || pattern || '%'
     FROM unnest($1::text[]) AS pattern
-  )
-) DESC, results.updated_at DESC
-OFFSET $3
-LIMIT $4;
+  );
 
+`;
+    const queryForPg = `
+    SELECT    pgs.id as pgs_id,*,pgfacilities.id as pgfacilities_id 
+    FROM pgs
+    LEFT JOIN pgfacilities
+    on pgs.id=pgfacilities.pg_id
+    WHERE city ILIKE $2
+      AND locality ILIKE ANY (
+        SELECT '%' || pattern || '%'
+        FROM unnest($1::text[]) AS pattern
+      )
+    ORDER BY (
+      SELECT COUNT(DISTINCT word)
+      FROM regexp_split_to_table(locality, E'\\s+') AS word
+      WHERE word ILIKE ANY (
+        SELECT '%' || pattern || '%'
+        FROM unnest($1::text[]) AS pattern
+      )
+    ) DESC, pgs.updated_at DESC
+    OFFSET $3
+    LIMIT $4; 
+`;
+    const queryForpgCount = `
+SELECT COUNT(*) AS total_count
+FROM pgs
+WHERE city ILIKE $2
+  AND locality ILIKE ANY (
+    SELECT '%' || pattern || '%'
+    FROM unnest($1::text[]) AS pattern
+  );
 
 `;
 
-    if (propertyType == "House") {
+    if (propertyType == "House" || propertyType == "house") {
       const { rows } = await db.query(queryForHouse, [
         allKeywords,
         city,
@@ -746,7 +754,13 @@ LIMIT $4;
         10,
       ]);
 
-      return res.status(200).json(rows);
+      const count = await db.query(queryForhouseCount, [allKeywords, city]);
+      //console.log(count);
+      // ...
+
+      return res
+        .status(200)
+        .json({ count: count.rows[0].total_count, allhouses: rows });
     } else {
       const { rows } = await db.query(queryForPg, [
         allKeywords,
@@ -755,7 +769,11 @@ LIMIT $4;
         10,
       ]);
 
-      return res.status(200).json(rows);
+      const count = await db.query(queryForpgCount, [allKeywords, city]);
+
+      return res
+        .status(200)
+        .json({ count: count.rows[0].total_count, allpgs: rows });
     }
   } catch (err) {
     res.status(400).json({
