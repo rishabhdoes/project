@@ -682,6 +682,7 @@ const listPropertiesOnSearch = async (req, res) => {
     const allKeywords = keywords.flat();
 
     const queryForHouse = `
+
     WITH results AS (
       SELECT houses.id AS houses_id, houses.*, housefacilities.id AS housefacilities_id,
         COUNT(*) OVER () AS total_count
@@ -692,6 +693,7 @@ const listPropertiesOnSearch = async (req, res) => {
           SELECT '%' || pattern || '%'
           FROM unnest($1::text[]) AS pattern
         )
+
     )
     SELECT *
     FROM results
