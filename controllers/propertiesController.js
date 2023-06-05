@@ -682,46 +682,58 @@ const listPropertiesOnSearch = async (req, res) => {
     const allKeywords = keywords.flat();
 
     const queryForHouse = `
-  SELECT    houses.id as house_id,*,housefacilities.id as housefacility_id 
-  FROM houses
-  LEFT JOIN housefacilities
-  on houses.id=housefacilities.house_id
+
+    WITH results AS (
+      SELECT houses.id AS houses_id, houses.*, housefacilities.id AS housefacilities_id,
+        COUNT(*) OVER () AS total_count
+      FROM houses
+      LEFT JOIN housefacilities ON houses.id = housefacilities.house_id
+      WHERE city ILIKE $2
+        AND locality ILIKE ANY (
+          SELECT '%' || pattern || '%'
+          FROM unnest($1::text[]) AS pattern
+        )
+
+    )
+    SELECT *
+    FROM results
+    ORDER BY (
+      SELECT COUNT(DISTINCT word)
+      FROM regexp_split_to_table(results.locality, E'\\s+') AS word
+      WHERE word ILIKE ANY (
+        SELECT '%' || pattern || '%'
+        FROM unnest($1::text[]) AS pattern
+      )
+    ) DESC, results.updated_at DESC
+    OFFSET $3
+    LIMIT $4;
+    
+  
+  
+`;
+    const queryForPg = `
+
+WITH results AS (
+  SELECT pgs.id AS pg_id, pgs.*, pgfacilities.pg_id AS pgfacilities_id,
+    COUNT(*) OVER () AS total_count
+  FROM pgs
+  LEFT JOIN pgfacilities ON pgs.id = pgfacilities.pg_id
   WHERE city ILIKE $2
     AND locality ILIKE ANY (
       SELECT '%' || pattern || '%'
       FROM unnest($1::text[]) AS pattern
     )
-  ORDER BY (
-    SELECT COUNT(DISTINCT word)
-    FROM regexp_split_to_table(locality, E'\\s+') AS word
-    WHERE word ILIKE ANY (
-      SELECT '%' || pattern || '%'
-      FROM unnest($1::text[]) AS pattern
-    )
-  ) DESC, houses.created_at DESC
-  OFFSET $3
-  LIMIT $4;
-  
-  
-`;
-    const queryForPg = `
+)
 SELECT *
-FROM pgs
-LEFT JOIN pgfacilities
-on pgs.id=pgfacilities.pg_id
-WHERE city ILIKE $2
-  AND locality ILIKE ANY (
-    SELECT '%' || pattern || '%'
-    FROM unnest($1::text[]) AS pattern
-  )
+FROM results
 ORDER BY (
   SELECT COUNT(DISTINCT word)
-  FROM regexp_split_to_table(locality, E'\\s+') AS word
+  FROM regexp_split_to_table(results.locality, E'\\s+') AS word
   WHERE word ILIKE ANY (
     SELECT '%' || pattern || '%'
     FROM unnest($1::text[]) AS pattern
   )
-) DESC, pgs.created_at DESC
+) DESC, results.updated_at DESC
 OFFSET $3
 LIMIT $4;
 
@@ -732,7 +744,7 @@ LIMIT $4;
       const { rows } = await db.query(queryForHouse, [
         allKeywords,
         city,
-        10 * pgNo,
+        10 * (pgNo - 1),
         10,
       ]);
 
@@ -741,7 +753,7 @@ LIMIT $4;
       const { rows } = await db.query(queryForPg, [
         allKeywords,
         city,
-        10 * pgNo,
+        10 * (pgNo - 1),
         10,
       ]);
 
