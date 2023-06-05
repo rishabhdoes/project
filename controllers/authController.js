@@ -56,20 +56,20 @@ exports.verify = async (req, res) => {
     const { userId, otp } = req.body;
 
     if (!userId || !otp.trim())
-      return sendMsg(res, 401, false, "Invalid request, Missing Parameters!");
+      return sendMsg(res, 400, false, "Invalid request, Missing Parameters!");
 
     const { rows } = await db.query("SELECT * FROM users WHERE id = $1", [
       userId,
     ]);
 
     if (!rows || !rows.length) {
-      return sendMsg(res, 401, false, "User not found!");
+      return sendMsg(res, 400, false, "User not found!");
     }
 
     let user = rows[0];
 
     if (user.verified === true)
-      return sendMsg(res, 401, false, "Account already verified");
+      return sendMsg(res, 400, false, "Account already verified");
 
     const { rows: tokenRows } = await db.query(
       "SELECT * FROM otpTokens WHERE user_id = $1",
@@ -77,7 +77,7 @@ exports.verify = async (req, res) => {
     );
 
     if (!tokenRows || !tokenRows.length) {
-      return sendMsg(res, 401, false, "User not found!");
+      return sendMsg(res, 400, false, "User not found!");
     }
 
     let token = tokenRows[0];
@@ -85,7 +85,7 @@ exports.verify = async (req, res) => {
     const isMatch = await compare(otp, token.otptoken_hash);
 
     if (!isMatch) {
-      return sendMsg(res, 401, false, "User not found!");
+      return sendMsg(res, 400, false, "Invalid OTP!");
     }
 
     user.verified = true;
@@ -162,26 +162,22 @@ exports.forgotPassword = async (req, res) => {
 };
 
 exports.resetPassword = async (req, res) => {
-  const { user_id, token } = req.params;
+  let { user_id, token } = req.params;
   token = token.slice(0, -10);
   const newPassword = req.body.newPassword;
   try {
     const password_hash = await hash(newPassword, 10);
     const secret = JWT_SECRET;
 
-    const verify = jwt.verify(token, secret);
-    console.log("verify:", verify);
+      await db.query(`UPDATE users SET password_hash=$1 WHERE id=$2`, [
+        password_hash,
+        user_id,
+      ]);
+      return sendMsg(res, 200, true, "Password Changed");
+    } catch (error) {
+      console.log(error);
+      sendMsg(res, 400, true, "Link expired");
+      // return res.status(400).send("Link Expired");
+    }
 
-    await db.query(`UPDATE users SET password_hash=$1 WHERE id=$2`, [
-      password_hash,
-      user_id,
-    ]);
-
-    return res.status(200).send("Password Changed!");
-  } catch (error) {
-    console.log(error);
-    res.statusText = "Link Expired";
-    return res.status(400).send("Link Expired");
-    // res.json({ status: "Something Went Wrong" });
-  }
 };
