@@ -12,6 +12,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(cors({ origin: CLIENT_URL, credentials: true }));
 app.use(passport.initialize());
+app.use(express.urlencoded({ extended: true }));
 
 const publicRoutes = require("./routes/publicRoutes");
 const secureRoutes = require("./routes/secureRoutes");
@@ -24,7 +25,6 @@ app.get("/", async (req, res) => {
   const results = await db.query("select * from users");
   res.send("hi");
 });
-
 
 // Error Handling middlewares
 app.use(notFound);
