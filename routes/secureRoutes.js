@@ -17,7 +17,11 @@ const {
 } = require("../controllers/propertiesController");
 
 const { housesValidation } = require("../validators/auth");
-const { handleHouseImageUpload } = require("../controllers/handleImage");
+const {
+  handleHouseImageUpload,
+  handleDescription,
+  handleDeleteImage,
+} = require("../controllers/handleImage");
 const { isHouseOwner } = require("../middleware/house-middleware");
 
 const router = Router();
@@ -50,5 +54,9 @@ router.post(
   upload.array("image"),
   handleHouseImageUpload
 );
+
+router.put("/house/uploadImage/change-description/:imageId", handleDescription);
+
+router.delete("/house/deleteImage/:imageId", handleDeleteImage);
 
 module.exports = router;
