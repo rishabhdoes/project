@@ -671,27 +671,70 @@ const getMyListings = async (req, res) => {
 
 const listPropertiesOnSearch = async (req, res) => {
   try {
-    const { propertyType, city, text, pgNo } = req.body;
+    const { propertyType='', city='', text=[], pgNo = 1, filters={} } = req.body;
 
+   const{ bhk_type = undefined,
+   preferred_tenants = undefined,
+    price_greater_than = undefined,
+    price_less_than = undefined,
+    facing = undefined,
+    available_from = undefined,
+    furnishing_type = undefined,
+    four_wheeler_parking = undefined,
+    two_wheeler_parking = undefined,
+    property_with_image = undefined,
+    property_type =undefined,} = filters ||{};
+
+    
+    let available_date_less_than = undefined;
+    let available_date_greater_than = undefined;
+    if(available_from === 'immediate')
+    {
+      available_date_less_than = new Date();
+    }
+    else if(available_from === 'within 15 days')
+    {
+      available_date_less_than = new Date() + 15*24*60*60*1000;
+    }
+    else if(available_from === 'within 30 days')
+    {
+      available_date_less_than += new Date() + 30*24*60*60*1000;
+    }
+    else if(available_from === 'after 30 days')
+    {
+      available_date_greater_than += new Date() + 30*24*60*60*1000;
+    }
     const keywords = text.map((textArray) => {
       const op = textArray.split(",");
-      // console.log(op);
       return op;
     });
 
     const allKeywords = keywords.flat();
-    //console.log(allKeywords);
 
     const queryForHouse = `
     SELECT    houses.id as houses_id,*,housefacilities.id as housefacilities_id 
     FROM houses
     LEFT JOIN housefacilities
     on houses.id=housefacilities.house_id
+    LEFT JOIN propertymediatable 
+    ON houses.id = propertymediatable.house_id
     WHERE city ILIKE $2
       AND locality ILIKE ANY (
         SELECT '%' || pattern || '%'
         FROM unnest($1::text[]) AS pattern
       )
+      AND (bhk_type = ANY ($5) OR $5 IS NULL)
+      AND (preferred_tenants = ANY ($6) OR $6 IS NULL)
+      AND (rent >= $7 OR $7 IS NULL)
+      AND (rent <= $8 OR $8 IS NULL)
+      AND (facing = $9 OR $9 IS NULL)
+      AND (available_from <= $10 OR $10 IS NULL)
+      AND (available_from >= $11 OR $11 IS NULL)
+      AND (furnishing_type = ANY ($12) OR $12 IS NULL)
+      AND (four_wheeler_parking = $13 OR $13 IS NULL)
+      AND (two_wheeler_parking = $14 OR $14 IS NULL)
+      AND (media_url = $15 OR $15 IS NULL)
+      AND (property_type = $16 OR $16 IS NULL)
     ORDER BY (
       SELECT COUNT(DISTINCT word)
       FROM regexp_split_to_table(locality, E'\\s+') AS word
@@ -707,11 +750,28 @@ const listPropertiesOnSearch = async (req, res) => {
     const queryForhouseCount = `
 SELECT COUNT(*) AS total_count
 FROM houses
+LEFT JOIN housefacilities
+    on houses.id=housefacilities.house_id
+    LEFT JOIN propertymediatable 
+    ON houses.id = propertymediatable.house_id
 WHERE city ILIKE $2
   AND locality ILIKE ANY (
     SELECT '%' || pattern || '%'
     FROM unnest($1::text[]) AS pattern
-  );
+  )
+  AND (bhk_type = ANY ($3) OR $3 IS NULL)
+  AND (preferred_tenants = ANY ($4) OR $4 IS NULL)
+  AND (rent >= $5 OR $5 IS NULL)
+  AND (rent <= $6 OR $6 IS NULL)
+  AND (facing = $7 OR $7 IS NULL)
+  AND (available_from <= $8 OR $8 IS NULL)
+  AND (available_from >= $9 OR $9 IS NULL)
+  AND (furnishing_type = ANY ($10) OR $10 IS NULL)
+  AND (four_wheeler_parking = $11 OR $11 IS NULL)
+  AND (two_wheeler_parking = $12 OR $12 IS NULL)
+  AND (media_url = $13 OR $13 IS NULL)
+  AND (property_type = $14 OR $14 IS NULL)
+  ;
 
 `;
     const queryForPg = `
@@ -746,15 +806,45 @@ WHERE city ILIKE $2
 
 `;
 
+
     if (propertyType == "House" || propertyType == "house") {
-      const { rows } = await db.query(queryForHouse, [
+      const data  = await db.query(queryForHouse, [
         allKeywords,
         city,
         10 * (pgNo - 1),
         10,
+        bhk_type,
+        preferred_tenants,
+        price_greater_than,
+        price_less_than,
+        facing,
+        available_date_less_than,
+        available_date_greater_than,
+        furnishing_type,
+        four_wheeler_parking,
+        two_wheeler_parking,
+        property_with_image,
+        property_type
       ]);
+      const {rows} = data
 
-      const count = await db.query(queryForhouseCount, [allKeywords, city]);
+      const count = await db.query(queryForhouseCount, [
+        allKeywords,
+         city,
+         bhk_type,
+        preferred_tenants,
+        price_greater_than,
+        price_less_than,
+        facing,
+        available_date_less_than,
+        available_date_greater_than,
+        furnishing_type,
+        four_wheeler_parking,
+        two_wheeler_parking,
+        property_with_image,
+        property_type
+        
+        ]);
       //console.log(count);
       // ...
 
@@ -767,6 +857,7 @@ WHERE city ILIKE $2
         city,
         10 * (pgNo - 1),
         10,
+        
       ]);
 
       const count = await db.query(queryForpgCount, [allKeywords, city]);
