@@ -57,21 +57,7 @@ const newPgProperty = async (req, res) => {
 
 const updateHouseProperty = async (req, res) => {
   try {
-    const userId = req.user.id;
     const { houseId } = req.params;
-
-    console.log(userId, houseId);
-
-    const { rows } = await db.query("SELECT * FROM houses WHERE id = $1", [
-      houseId,
-    ]);
-
-    if (!rows.length) return res.status(404).json("House does not exist");
-
-    const house = rows[0];
-
-    if (house.owner_id !== userId)
-      return res.status(401).json("Not Authorised");
 
     let updatedHouse = {};
 
@@ -101,16 +87,18 @@ const updateHouseProperty = async (req, res) => {
       monthly_maintenance = null,
       maintenance_amount = null,
       preferred_tenants = null,
-      furnishing = null,
+      furnishing_type = null,
       lockin_period = null,
       secondary_number = null,
       available_from = null,
       property_type = null,
+      water_supply = null,
       rank = null,
     } = req.body;
 
     const houseObj = {
       title,
+      water_supply,
       is_apartment,
       apartment_type,
       apartment_name,
@@ -135,7 +123,7 @@ const updateHouseProperty = async (req, res) => {
       monthly_maintenance,
       maintenance_amount,
       preferred_tenants,
-      furnishing,
+      furnishing_type,
       lockin_period,
       secondary_number,
       available_from,
@@ -147,6 +135,7 @@ const updateHouseProperty = async (req, res) => {
     const houseArrDBKeys = [
       "id",
       "owner_id",
+      "water_supply",
       "title",
       "is_apartment",
       "apartment_type",
@@ -173,7 +162,7 @@ const updateHouseProperty = async (req, res) => {
       "monthly_maintenance",
       "maintenance_amount",
       "preferred_tenants",
-      "furnishing",
+      "furnishing_type",
       "lockin_period",
       "secondary_number",
       "available_from",
@@ -206,15 +195,16 @@ const updateHouseProperty = async (req, res) => {
     }
 
     const {
-      ac_count = null,
-      tv_count = null,
-      bedrooms_count = null,
+      ac = null,
+      tv = null,
       bathrooms_count = null,
+      bedrooms_count = null,
+      balcony_count = null,
       cupboard_count = null,
+      furniture = null,
       fridge = null,
       water_filter = null,
       washing_machine = null,
-      microwave = null,
       geyser = null,
       gym = null,
       two_wheeler_parking = null,
@@ -223,7 +213,6 @@ const updateHouseProperty = async (req, res) => {
       cctv = null,
       swimming_pool = null,
       power_backup = null,
-      water_supply = null,
       gas_pipeline = null,
       gated_security = null,
       park = null,
@@ -235,15 +224,16 @@ const updateHouseProperty = async (req, res) => {
     } = req.body;
 
     const houseFacilitiesObj = {
-      ac_count,
-      tv_count,
+      ac,
+      tv,
+      balcony_count,
+      furniture,
       bedrooms_count,
       bathrooms_count,
       cupboard_count,
       fridge,
       water_filter,
       washing_machine,
-      microwave,
       geyser,
       gym,
       two_wheeler_parking,
@@ -252,7 +242,6 @@ const updateHouseProperty = async (req, res) => {
       cctv,
       swimming_pool,
       power_backup,
-      water_supply,
       gas_pipeline,
       gated_security,
       park,
@@ -267,15 +256,16 @@ const updateHouseProperty = async (req, res) => {
     const houseFacilitiesDBKeys = [
       "id",
       "house_id",
-      "ac_count",
-      "tv_count",
+      "ac",
+      "tv",
+      "balcony_count",
+      "furniture",
       "bedrooms_count",
       "bathrooms_count",
       "cupboard_count",
       "fridge",
       "water_filter",
       "washing_machine",
-      "microwave",
       "geyser",
       "gym",
       "two_wheeler_parking",
@@ -284,7 +274,6 @@ const updateHouseProperty = async (req, res) => {
       "cctv",
       "swimming_pool",
       "power_backup",
-      "water_supply",
       "gas_pipeline",
       "gated_security",
       "park",
@@ -299,7 +288,7 @@ const updateHouseProperty = async (req, res) => {
     // also check if key exists in db
     const houseFacilitiesArr = Object.entries(houseFacilitiesObj)
       .filter(([key, value]) => {
-        value !== null && houseFacilitiesDBKeys.includes(key);
+        return value !== null && houseFacilitiesDBKeys.includes(key);
       })
       .map(([key, value]) => ({
         key,
@@ -307,42 +296,52 @@ const updateHouseProperty = async (req, res) => {
       }));
 
     if (houseFacilitiesArr.length > 0) {
-      let updatedHouseFacility = {};
+      let updatedHouseFacilities = {};
 
-      if (rows.length === 0) {
-        const columns = houseFacilitiesArr
-          .map((facility) => `"${facility.key}"`)
-          .join(", ");
-        const placeholders = houseFacilitiesArr
-          .map((_, index) => `$${index + 1}`)
-          .join(", ");
+      const { rows } = await db.query(
+        "SELECT * FROM houseFacilities WHERE house_id = $1",
+        [houseId]
+      );
 
-        const dbQuery = `INSERT INTO houseFacilities (${columns}) VALUES (${placeholders}) RETURNING *`;
+      if (rows.length > 0) {
+        const parameterValues = houseFacilitiesArr.map(
+          (facility) => facility.value
+        );
+        parameterValues.push(houseId);
 
-        const values = houseFacilitiesArr.map((cur) => {
-          return cur.value;
-        });
-
-        const { rows } = await db.query(dbQuery, [...values, houseId]);
-        updatedHouseFacility = rows[0];
-      } else {
-        const updateFacilities = `UPDATE houseFacilities SET ${houseFacilitiesArr
+        const setClause = houseFacilitiesArr
           .map((facility, index) => `${facility.key} = $${index + 1}`)
-          .join(", ")} WHERE house_id = $${
+          .join(", ");
+
+        const updateQuery = `UPDATE houseFacilities SET ${setClause} WHERE house_id = $${
           houseFacilitiesArr.length + 1
         } RETURNING *`;
 
-        const values = houseFacilitiesArr.map((cur) => {
-          return cur.value;
-        });
+        const { rows } = await client.query(updateQuery, parameterValues);
 
-        updatedHouseFacility = await db.query(updateFacilities, [
-          ...values,
-          houseId,
-        ]);
+        if (rows.length > 0) updatedHouseFacilities = rows[0];
+      } else {
+        houseFacilitiesArr.push({ key: "house_id", value: houseId });
+
+        const parameterKeys = houseFacilitiesArr
+          .map((facility) => facility.key)
+          .join(", ");
+        const parameterValues = houseFacilitiesArr.map(
+          (facility) => facility.value
+        );
+
+        const setClause = houseFacilitiesArr
+          .map((_, index) => `$${index + 1}`)
+          .join(", ");
+
+        const insertQuery = `INSERT INTO houseFacilities (${parameterKeys}) VALUES (${setClause}) RETURNING *`;
+
+        const { rows } = await db.query(insertQuery, [...parameterValues]);
+
+        if (rows.length > 0) updatedHouseFacilities = rows[0];
       }
 
-      updatedHouse = { ...updatedHouse, ...updatedHouseFacility };
+      updatedHouse = { ...updatedHouse, ...updatedHouseFacilities };
     }
 
     res
@@ -882,10 +881,22 @@ const shortlistProperty = async (req, res) => {
 
     // check for house
     if (propertyType === "house") {
+      const data = await db.query("SELECT id FROM houses WHERE houses.id=$1", [
+        propertyId,
+      ]);
+
+      if (data.rows.length === 0) {
+        return res.status(400).json({ message: "House not found" });
+      }
+
       const { rows } = await db.query(
         "SELECT house_shortlists, count_shortlists FROM users WHERE id=$1",
         [userId]
       );
+
+      if (rows.length === 0) {
+        return res.status(400).json({ message: "User not found" });
+      }
 
       let oldHouseShortlists = rows[0].house_shortlists;
       let countShortlists = parseInt(rows[0].count_shortlists);
@@ -919,10 +930,22 @@ const shortlistProperty = async (req, res) => {
 
       return res.status(200).json("Updated House Shortlists");
     } else if (propertyType === "pg") {
+      const data = await db.query("SELECT id FROM pgs WHERE pgs.id=$1", [
+        propertyId,
+      ]);
+
+      if (data.rows.length === 0) {
+        res.status(400).json({ message: "Pg not found!" });
+      }
+
       const { rows } = await db.query(
         "SELECT pg_shortlists, count_shortlists FROM users WHERE id=$1",
         [userId]
       );
+
+      if (rows.length === 0) {
+        return res.status(400).json({ message: "User not found!" });
+      }
 
       let oldPgShortlists = rows[0].pg_shortlists;
       let countShortlists = parseInt(rows[0].count_shortlists);
