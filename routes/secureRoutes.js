@@ -17,8 +17,6 @@ const {
   getHouse,
 } = require("../controllers/propertiesController");
 
-const { housesValidation } = require("../validators/auth");
-const { validationMiddleware } = require("../middleware/validation-middleware");
 const {
   handleHouseImageUpload,
   handleDescription,

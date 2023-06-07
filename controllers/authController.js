@@ -161,7 +161,7 @@ const forgotPassword = async (req, res) => {
   }
 };
 
-exports.resetPassword = async (req, res) => {
+const resetPassword = async (req, res) => {
   let { user_id, token } = req.params;
   token = token.slice(0, -10);
   const newPassword = req.body.newPassword;
@@ -169,17 +169,16 @@ exports.resetPassword = async (req, res) => {
     const password_hash = await hash(newPassword, 10);
     const secret = JWT_SECRET;
 
-      await db.query(`UPDATE users SET password_hash=$1 WHERE id=$2`, [
-        password_hash,
-        user_id,
-      ]);
-      return sendMsg(res, 200, true, "Password Changed");
-    } catch (error) {
-      console.log(error);
-      sendMsg(res, 400, true, "Link expired");
-      // return res.status(400).send("Link Expired");
-    }
-
+    await db.query(`UPDATE users SET password_hash=$1 WHERE id=$2`, [
+      password_hash,
+      user_id,
+    ]);
+    return sendMsg(res, 200, true, "Password Changed");
+  } catch (error) {
+    console.log(error);
+    sendMsg(res, 400, true, "Link expired");
+    // return res.status(400).send("Link Expired");
+  }
 };
 
 module.exports = {
