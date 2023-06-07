@@ -2,6 +2,55 @@ const { Coordinates } = require("../constants");
 const db = require("../db");
 const MAX_COUNT = 100;
 
+const getHouse = async (req, res) => {
+  try {
+    const { houseId } = req.query;
+    // console.log(houseId);
+    const data = await db.query(
+      `SELECT houses.*,
+      houseFacilities.ac,
+      houseFacilities.tv,
+      houseFacilities.fridge,
+      houseFacilities.water_filter,
+      houseFacilities.washing_machine,
+      houseFacilities.geyser,
+      houseFacilities.gym,
+      houseFacilities.lift,
+      houseFacilities.cctv,
+      houseFacilities.swimming_pool,
+      houseFacilities.power_backup,
+      houseFacilities.gas_pipeline,
+      houseFacilities.gated_security,
+      houseFacilities.park,
+      houseFacilities.wifi,
+      houseFacilities.visitor_parking,
+      houseFacilities.shopping_center,
+      houseFacilities.fire_safety,
+      houseFacilities.club_house,
+      houseFacilities.balcony_count,
+      houseFacilities.furniture,
+      houseFacilities.bathrooms_count 
+  FROM
+    houses
+  LEFT JOIN
+    houseFacilities ON houses.id = houseFacilities.house_id
+  WHERE houses.id = $1;
+  `,
+      [houseId]
+    );
+
+    const { rows } = data;
+    // console.log(rows[0]);
+    if (!rows.length) {
+      throw new Error("House not found");
+    } else {
+      return res.status(200).json(rows[0]);
+    }
+  } catch (err) {
+    return res.status(400).json(err);
+  }
+};
+
 const newHouseProperty = async (req, res) => {
   try {
     const { city } = req.body;
@@ -73,6 +122,8 @@ const updateHouseProperty = async (req, res) => {
       facing = null,
       block = null,
       floor = null,
+      latitude = null,
+      longitude = null,
       total_floors = null,
       street = null,
       locality = null,
@@ -108,6 +159,8 @@ const updateHouseProperty = async (req, res) => {
       property_age,
       facing,
       block,
+      latitude,
+      longitude,
       floor,
       total_floors,
       street,
@@ -147,6 +200,8 @@ const updateHouseProperty = async (req, res) => {
       "property_age",
       "facing",
       "block",
+      "latitude",
+      "longitude",
       "floor",
       "total_floors",
       "street",
@@ -1057,4 +1112,5 @@ module.exports = {
   shortlistProperty,
   getMyListings,
   showShortlists,
+  getHouse,
 };

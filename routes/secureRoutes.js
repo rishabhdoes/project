@@ -14,6 +14,7 @@ const {
   getMyListings,
   shortlistProperty,
   showShortlists,
+  getHouse,
 } = require("../controllers/propertiesController");
 
 const { housesValidation } = require("../validators/auth");
@@ -22,8 +23,13 @@ const {
   handleHouseImageUpload,
   handleDescription,
   handleDeleteImage,
+  getImages,
 } = require("../controllers/handleImage");
-const { isHouseOwner } = require("../middleware/house-middleware");
+
+const {
+  isHouseOwner,
+  housesValidation,
+} = require("../middleware/house-middleware");
 
 const router = Router();
 
@@ -33,11 +39,11 @@ router.use(userAuth);
 router.post("/newProperty/house/create", newHouseProperty);
 router.post(
   "/newProperty/house/update/:houseId",
-  housesValidation,
-  validationMiddleware,
-  isHouseOwner,
+  [isHouseOwner, housesValidation],
   updateHouseProperty
 );
+
+router.get("/gethouse", getHouse);
 
 // pgs
 router.post("/newProperty/pg/create", newPgProperty);
@@ -58,6 +64,7 @@ router.post(
   handleHouseImageUpload
 );
 
+router.get("/getHouseImage/:houseId", getImages);
 router.put("/house/uploadImage/change-description/:imageId", handleDescription);
 
 router.delete("/house/deleteImage/:imageId", handleDeleteImage);
