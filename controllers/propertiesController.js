@@ -1,5 +1,6 @@
 const { Coordinates } = require("../constants");
 const db = require("../db");
+const { houses, houseFacilities } = require("../db/tables");
 const MAX_COUNT = 100;
 
 const getHouse = async (req, res) => {
@@ -725,38 +726,38 @@ const getMyListings = async (req, res) => {
 
 const listPropertiesOnSearch = async (req, res) => {
   try {
-    const { propertyType='', city='', text=[], pgNo = 1, filters={} } = req.body;
+    const {
+      propertyType = "",
+      city = "",
+      text = [],
+      pgNo = 1,
+      filters = {},
+    } = req.body;
 
-   const{ bhk_type = undefined,
-   preferred_tenants = undefined,
-    price_greater_than = undefined,
-    price_less_than = undefined,
-    facing = undefined,
-    available_from = undefined,
-    furnishing_type = undefined,
-    four_wheeler_parking = undefined,
-    two_wheeler_parking = undefined,
-    property_with_image = undefined,
-    property_type =undefined,} = filters ||{};
+    const {
+      bhk_type = undefined,
+      preferred_tenants = undefined,
+      price_greater_than = undefined,
+      price_less_than = undefined,
+      facing = undefined,
+      available_from = undefined,
+      furnishing_type = undefined,
+      four_wheeler_parking = undefined,
+      two_wheeler_parking = undefined,
+      property_with_image = undefined,
+      property_type = undefined,
+    } = filters || {};
 
-    
     let available_date_less_than = undefined;
     let available_date_greater_than = undefined;
-    if(available_from === 'immediate')
-    {
+    if (available_from === "immediate") {
       available_date_less_than = new Date();
-    }
-    else if(available_from === 'within 15 days')
-    {
-      available_date_less_than = new Date() + 15*24*60*60*1000;
-    }
-    else if(available_from === 'within 30 days')
-    {
-      available_date_less_than += new Date() + 30*24*60*60*1000;
-    }
-    else if(available_from === 'after 30 days')
-    {
-      available_date_greater_than += new Date() + 30*24*60*60*1000;
+    } else if (available_from === "within 15 days") {
+      available_date_less_than = new Date() + 15 * 24 * 60 * 60 * 1000;
+    } else if (available_from === "within 30 days") {
+      available_date_less_than += new Date() + 30 * 24 * 60 * 60 * 1000;
+    } else if (available_from === "after 30 days") {
+      available_date_greater_than += new Date() + 30 * 24 * 60 * 60 * 1000;
     }
     const keywords = text.map((textArray) => {
       const op = textArray.split(",");
@@ -860,9 +861,8 @@ WHERE city ILIKE $2
 
 `;
 
-
     if (propertyType == "House" || propertyType == "house") {
-      const data  = await db.query(queryForHouse, [
+      const data = await db.query(queryForHouse, [
         allKeywords,
         city,
         10 * (pgNo - 1),
@@ -878,14 +878,14 @@ WHERE city ILIKE $2
         four_wheeler_parking,
         two_wheeler_parking,
         property_with_image,
-        property_type
+        property_type,
       ]);
-      const {rows} = data
+      const { rows } = data;
 
       const count = await db.query(queryForhouseCount, [
         allKeywords,
-         city,
-         bhk_type,
+        city,
+        bhk_type,
         preferred_tenants,
         price_greater_than,
         price_less_than,
@@ -896,9 +896,8 @@ WHERE city ILIKE $2
         four_wheeler_parking,
         two_wheeler_parking,
         property_with_image,
-        property_type
-        
-        ]);
+        property_type,
+      ]);
       //console.log(count);
       // ...
 
@@ -911,7 +910,6 @@ WHERE city ILIKE $2
         city,
         10 * (pgNo - 1),
         10,
-        
       ]);
 
       const count = await db.query(queryForpgCount, [allKeywords, city]);
@@ -1103,6 +1101,30 @@ const showShortlists = async (req, res) => {
   }
 };
 
+const getPropertyData = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) throw new Error("id invalid");
+
+    const query = `SELECT    houses.id as houses_id,*,housefacilities.id as housefacilities_id 
+   FROM houses
+   LEFT JOIN housefacilities
+   on houses.id=housefacilities.house_id
+   LEFT JOIN propertymediatable 
+   ON houses.id = propertymediatable.house_id
+   where houses.id=$1
+
+`;
+
+    const { rows } = await db.query(query, [id]);
+
+    res.status(200).json({ data: rows[0] });
+  } catch (e) {
+    res.status(401).json({ message: "not able to find property" });
+  }
+};
+
 module.exports = {
   newHouseProperty,
   newPgProperty,
@@ -1113,4 +1135,5 @@ module.exports = {
   getMyListings,
   showShortlists,
   getHouse,
+  getPropertyData,
 };

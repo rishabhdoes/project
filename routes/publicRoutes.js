@@ -22,6 +22,7 @@ const {
 } = require("../controllers/Googleapiscontrolller");
 const {
   listPropertiesOnSearch,
+  getPropertyData,
 } = require("../controllers/propertiesController");
 
 const router = Router();
@@ -49,5 +50,7 @@ router.post(
 router.post("/listProperties", listPropertiesOnSearch);
 router.get("/autocomplete", suggestionAutocomplete);
 router.get("/nearbyLocalities", nearbyLocalities);
+
+router.get("/getProperty/:id", getPropertyData);
 
 module.exports = router;
