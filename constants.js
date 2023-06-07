@@ -25,10 +25,10 @@ const BHKType = ["1 RK", "1 BHK", "2 BHK", "3 BHK", "4 BHK", "4+ BHK"];
 
 const PropertyAge = [
   "Less than 1 year",
-  "Between 1 to 3 year",
-  "Between 3 to 5 year",
-  "Between 5 to 10 year",
-  "Greater than 10 year",
+  "Between 1 to 3 years",
+  "Between 3 to 5 years",
+  "Between 5 to 10 years",
+  "Greater than 10 years",
 ];
 
 const Facing = [

@@ -372,7 +372,7 @@ const updateHouseProperty = async (req, res) => {
           houseFacilitiesArr.length + 1
         } RETURNING *`;
 
-        const { rows } = await client.query(updateQuery, parameterValues);
+        const { rows } = await db.query(updateQuery, parameterValues);
 
         if (rows.length > 0) updatedHouseFacilities = rows[0];
       } else {
@@ -725,38 +725,38 @@ const getMyListings = async (req, res) => {
 
 const listPropertiesOnSearch = async (req, res) => {
   try {
-    const { propertyType='', city='', text=[], pgNo = 1, filters={} } = req.body;
+    const {
+      propertyType = "",
+      city = "",
+      text = [],
+      pgNo = 1,
+      filters = {},
+    } = req.body;
 
-   const{ bhk_type = undefined,
-   preferred_tenants = undefined,
-    price_greater_than = undefined,
-    price_less_than = undefined,
-    facing = undefined,
-    available_from = undefined,
-    furnishing_type = undefined,
-    four_wheeler_parking = undefined,
-    two_wheeler_parking = undefined,
-    property_with_image = undefined,
-    property_type =undefined,} = filters ||{};
+    const {
+      bhk_type = undefined,
+      preferred_tenants = undefined,
+      price_greater_than = undefined,
+      price_less_than = undefined,
+      facing = undefined,
+      available_from = undefined,
+      furnishing_type = undefined,
+      four_wheeler_parking = undefined,
+      two_wheeler_parking = undefined,
+      property_with_image = undefined,
+      property_type = undefined,
+    } = filters || {};
 
-    
     let available_date_less_than = undefined;
     let available_date_greater_than = undefined;
-    if(available_from === 'immediate')
-    {
+    if (available_from === "immediate") {
       available_date_less_than = new Date();
-    }
-    else if(available_from === 'within 15 days')
-    {
-      available_date_less_than = new Date() + 15*24*60*60*1000;
-    }
-    else if(available_from === 'within 30 days')
-    {
-      available_date_less_than += new Date() + 30*24*60*60*1000;
-    }
-    else if(available_from === 'after 30 days')
-    {
-      available_date_greater_than += new Date() + 30*24*60*60*1000;
+    } else if (available_from === "within 15 days") {
+      available_date_less_than = new Date() + 15 * 24 * 60 * 60 * 1000;
+    } else if (available_from === "within 30 days") {
+      available_date_less_than += new Date() + 30 * 24 * 60 * 60 * 1000;
+    } else if (available_from === "after 30 days") {
+      available_date_greater_than += new Date() + 30 * 24 * 60 * 60 * 1000;
     }
     const keywords = text.map((textArray) => {
       const op = textArray.split(",");
@@ -860,9 +860,8 @@ WHERE city ILIKE $2
 
 `;
 
-
     if (propertyType == "House" || propertyType == "house") {
-      const data  = await db.query(queryForHouse, [
+      const data = await db.query(queryForHouse, [
         allKeywords,
         city,
         10 * (pgNo - 1),
@@ -878,14 +877,14 @@ WHERE city ILIKE $2
         four_wheeler_parking,
         two_wheeler_parking,
         property_with_image,
-        property_type
+        property_type,
       ]);
-      const {rows} = data
+      const { rows } = data;
 
       const count = await db.query(queryForhouseCount, [
         allKeywords,
-         city,
-         bhk_type,
+        city,
+        bhk_type,
         preferred_tenants,
         price_greater_than,
         price_less_than,
@@ -896,9 +895,8 @@ WHERE city ILIKE $2
         four_wheeler_parking,
         two_wheeler_parking,
         property_with_image,
-        property_type
-        
-        ]);
+        property_type,
+      ]);
       //console.log(count);
       // ...
 
@@ -911,7 +909,6 @@ WHERE city ILIKE $2
         city,
         10 * (pgNo - 1),
         10,
-        
       ]);
 
       const count = await db.query(queryForpgCount, [allKeywords, city]);
@@ -929,7 +926,8 @@ WHERE city ILIKE $2
 
 const shortlistProperty = async (req, res) => {
   try {
-    const { userId, propertyType, propertyId } = req.body;
+    const { propertyType, propertyId } = req.body;
+    const userId = req.user_id;
 
     if (!userId || !propertyType || !propertyId)
       return res.status(401).json(res, false, "Invalid request");
@@ -1103,6 +1101,26 @@ const showShortlists = async (req, res) => {
   }
 };
 
+const getUser = async (req, res) => {
+  const userId = req.user.id;
+
+  if (!userId) throw new Error("UserId not found");
+
+  try {
+    const { rows, rowCount } = await db.query(
+      "SELECT * FROM users WHERE id=$1",
+      [userId]
+    );
+    if (rowCount) {
+      return res.status(200).json(rows[0]);
+    } else {
+      throw new Error("User not found");
+    }
+  } catch (err) {
+    return res.status(400).json(err);
+  }
+};
+
 module.exports = {
   newHouseProperty,
   newPgProperty,
@@ -1113,4 +1131,5 @@ module.exports = {
   getMyListings,
   showShortlists,
   getHouse,
+  getUser,
 };

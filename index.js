@@ -18,6 +18,7 @@ app.use(bodyParser.json());
 
 const publicRoutes = require("./routes/publicRoutes");
 const secureRoutes = require("./routes/secureRoutes");
+
 const { notFound, errorHandler } = require("./middleware/error-middleware");
 
 app.use("/public/api", publicRoutes);
