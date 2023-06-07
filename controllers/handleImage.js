@@ -28,18 +28,18 @@ const handleHouseImageUpload = async (req, res) => {
 const handleDescription = async (req, res) => {
   try {
     const { imageId } = req.params;
-    
+
     if (!imageId) {
       throw new Error("imageId not exists");
     }
-    
+
     const data = await db.query(
       "SELECT id, user_id FROM propertyMediaTable WHERE id = $1",
       [imageId]
-      );
-      
-      const { description } = req.body;
-      const { rows } = data;
+    );
+
+    const { description } = req.body;
+    const { rows } = data;
 
     if (!rows.length) {
       throw new Error("Image does not exist");
@@ -59,7 +59,7 @@ const handleDescription = async (req, res) => {
 
 const handleDeleteImage = async (req, res) => {
   try {
-    const { imageId }  = req.params;
+    const { imageId } = req.params;
 
     if (!imageId) {
       throw new Error("imageId not exists");
@@ -72,7 +72,6 @@ const handleDeleteImage = async (req, res) => {
     );
 
     const { rows } = data;
-
 
     if (!rows.length) {
       throw new Error("Image does not exist");
@@ -89,8 +88,23 @@ const handleDeleteImage = async (req, res) => {
   }
 };
 
+const getImages = async (req, res) => {
+  const { houseId } = req.params;
+
+  try {
+    const { rows } = await db.query(
+      "SELECT id, filename, description FROM propertyMediatable WHERE house_id = $1",
+      [houseId]
+    );
+    return res.status(200).json(rows);
+  } catch (err) {
+    return res.status(400).json(err);
+  }
+};
+
 module.exports = {
   handleHouseImageUpload,
   handleDescription,
   handleDeleteImage,
+  getImages,
 };
