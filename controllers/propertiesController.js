@@ -240,14 +240,14 @@ const updateHouseProperty = async (req, res) => {
       const updateDbQuery = `UPDATE houses SET ${houseArr
         .map((house, index) => `${house.key} = $${index + 1}`)
         .join(", ")} WHERE id = $${houseArr.length + 1} RETURNING *`;
-
-      const values = houseArr.map((cur) => {
-        return cur.value;
-      });
-
-      const { rows } = await db.query(updateDbQuery, [...values, houseId]);
-      updatedHouse = rows[0];
-    }
+        
+        const values = houseArr.map((cur) => {
+          return cur.value;
+        });
+        
+        const { rows } = await db.query(updateDbQuery, [...values, houseId]);
+        updatedHouse = rows[0];
+      }
 
     const {
       ac = null,
@@ -277,6 +277,7 @@ const updateHouseProperty = async (req, res) => {
       fire_safety = null,
       club_house = null,
     } = req.body;
+
 
     const houseFacilitiesObj = {
       ac,
@@ -353,12 +354,12 @@ const updateHouseProperty = async (req, res) => {
     if (houseFacilitiesArr.length > 0) {
       let updatedHouseFacilities = {};
 
-      const { rows } = await db.query(
+      const { rows, rowCount } = await db.query(
         "SELECT * FROM houseFacilities WHERE house_id = $1",
         [houseId]
       );
 
-      if (rows.length > 0) {
+      if (rowCount > 0) {
         const parameterValues = houseFacilitiesArr.map(
           (facility) => facility.value
         );
@@ -372,7 +373,7 @@ const updateHouseProperty = async (req, res) => {
           houseFacilitiesArr.length + 1
         } RETURNING *`;
 
-        const { rows } = await client.query(updateQuery, parameterValues);
+        const { rows,  } = await db.query(updateQuery, parameterValues);
 
         if (rows.length > 0) updatedHouseFacilities = rows[0];
       } else {
@@ -929,7 +930,8 @@ WHERE city ILIKE $2
 
 const shortlistProperty = async (req, res) => {
   try {
-    const { userId, propertyType, propertyId } = req.body;
+    const { propertyType, propertyId } = req.body;
+    const { id: userId } = req.user;
 
     if (!userId || !propertyType || !propertyId)
       return res.status(401).json(res, false, "Invalid request");
@@ -1030,6 +1032,9 @@ const shortlistProperty = async (req, res) => {
       );
 
       return res.status(200).json({ message: "Updated PG Shortlists" });
+    }
+    else{
+      throw new Error("propertyType doesn't exist")
     }
   } catch (err) {
     res.status(400).json({

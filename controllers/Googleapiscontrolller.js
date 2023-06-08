@@ -130,4 +130,5 @@ const nearbyLocalities = async (req, res) => {
 module.exports = {
   suggestionAutocomplete,
   nearbyLocalities,
+  getCoordinatesByLocation,
 };
