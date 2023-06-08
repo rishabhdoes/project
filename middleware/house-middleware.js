@@ -37,7 +37,9 @@ const {
   Coordinates,
   WATER_SUPPLY,
 } = require("../constants");
-const { getCoordinatesByLocation } = require("../controllers/Googleapiscontrolller");
+const {
+  getCoordinatesByLocation,
+} = require("../controllers/Googleapiscontrolller");
 
 const housesValidation = async (req, res, next) => {
   const {
@@ -79,7 +81,7 @@ const housesValidation = async (req, res, next) => {
   try {
     // validation for Property details page
     if (partNo === "1") {
-      if (!PropertyType.includes(property_type)) {
+      if (!property_type || !PropertyType.includes(property_type)) {
         throw new Error("Invalid Property type");
       }
 

@@ -15,6 +15,7 @@ const {
   shortlistProperty,
   showShortlists,
   getHouse,
+  getUser,
 } = require("../controllers/propertiesController");
 
 const {
@@ -48,7 +49,8 @@ router.post("/newProperty/pg/create", newPgProperty);
 router.post("/newProperty/pg/update/:pgId", updatePgProperty);
 
 // fetch all user listings
-router.get("/user/mylistings/", getMyListings);
+router.get("/user/me", getUser);
+router.get("/user/mylistings", getMyListings);
 
 // shortlist properties
 router.post("/user/property/shortlist", shortlistProperty);

@@ -135,6 +135,7 @@ const updateHouseProperty = async (req, res) => {
       zip_code = null,
       rent = null,
       deposit = null,
+      parking = null,
       rent_negotiable = null,
       monthly_maintenance = null,
       maintenance_amount = null,
@@ -183,6 +184,7 @@ const updateHouseProperty = async (req, res) => {
       available_from,
       property_type,
       rank,
+      parking,
     };
 
     // default array that contains all columns that exist in houses db
@@ -222,6 +224,7 @@ const updateHouseProperty = async (req, res) => {
       "lockin_period",
       "secondary_number",
       "available_from",
+      "parking",
       "rank",
     ];
 
@@ -374,7 +377,7 @@ const updateHouseProperty = async (req, res) => {
           houseFacilitiesArr.length + 1
         } RETURNING *`;
 
-        const { rows,  } = await db.query(updateQuery, parameterValues);
+        const { rows } = await db.query(updateQuery, parameterValues);
 
         if (rows.length > 0) updatedHouseFacilities = rows[0];
       } else {
@@ -1127,6 +1130,24 @@ const getPropertyData = async (req, res) => {
     res.status(200).json({ data: rows[0] });
   } catch (e) {
     res.status(401).json({ message: "not able to find property" });
+  }}
+const getUser = async (req, res) => {
+  const userId = req.user.id;
+
+  if (!userId) throw new Error("UserId not found");
+
+  try {
+    const { rows, rowCount } = await db.query(
+      "SELECT * FROM users WHERE id=$1",
+      [userId]
+    );
+    if (rowCount) {
+      return res.status(200).json(rows[0]);
+    } else {
+      throw new Error("User not found");
+    }
+  } catch (err) {
+    return res.status(400).json(err);
   }
 };
 
@@ -1141,4 +1162,5 @@ module.exports = {
   showShortlists,
   getHouse,
   getPropertyData,
+  getUser,
 };
