@@ -134,6 +134,7 @@ const updateHouseProperty = async (req, res) => {
       zip_code = null,
       rent = null,
       deposit = null,
+      parking = null,
       rent_negotiable = null,
       monthly_maintenance = null,
       maintenance_amount = null,
@@ -182,6 +183,7 @@ const updateHouseProperty = async (req, res) => {
       available_from,
       property_type,
       rank,
+      parking,
     };
 
     // default array that contains all columns that exist in houses db
@@ -221,6 +223,7 @@ const updateHouseProperty = async (req, res) => {
       "lockin_period",
       "secondary_number",
       "available_from",
+      "parking",
       "rank",
     ];
 
