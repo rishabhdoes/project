@@ -221,7 +221,7 @@ module.exports = {
   registerValidation: [email, password, phoneNumber, emailExists],
   loginValidation: [email, loginFieldsCheck],
 
-  emailValidation: [email, emailExists, getUserFromEmail],
+  emailValidation: [email, getUserFromEmail],
   tokenValidation: [password, getUserFromId],
   housesValidation,
 };
