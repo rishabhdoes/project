@@ -19,7 +19,6 @@ const getProfile = async (req, res) => {
 const updateProfile = async (req, res) => {
     try {
         const {id, newName, newEmail, newPhoneNumber} = req.body;
-        console.log("req.body:", req.body)
         const { rows, rowCount } = await db.query(`SELECT * FROM users WHERE id = $1`, [
         id,
         ]);
@@ -27,7 +26,6 @@ const updateProfile = async (req, res) => {
         return sendMsg(res, 400, false, "User not found!");
         }
         const user = rows[0];
-        console.log("user:", user)
         await db.query(`UPDATE users SET name = $2, email = $3, phone_number = $4 WHERE id = $1`, [id, newName, newEmail, newPhoneNumber]);
         return sendMsg(res, 200, true, "Profile Updated");
     } catch (error) {

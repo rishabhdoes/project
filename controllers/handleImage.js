@@ -65,7 +65,6 @@ const handleDeleteImage = async (req, res) => {
       throw new Error("imageId not exists");
     }
 
-    console.log(imageId);
     const data = await db.query(
       "SELECT id, user_id, filename FROM propertyMediaTable WHERE id = $1",
       [imageId]
