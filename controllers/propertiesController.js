@@ -244,14 +244,14 @@ const updateHouseProperty = async (req, res) => {
       const updateDbQuery = `UPDATE houses SET ${houseArr
         .map((house, index) => `${house.key} = $${index + 1}`)
         .join(", ")} WHERE id = $${houseArr.length + 1} RETURNING *`;
-        
-        const values = houseArr.map((cur) => {
-          return cur.value;
-        });
-        
-        const { rows } = await db.query(updateDbQuery, [...values, houseId]);
-        updatedHouse = rows[0];
-      }
+
+      const values = houseArr.map((cur) => {
+        return cur.value;
+      });
+
+      const { rows } = await db.query(updateDbQuery, [...values, houseId]);
+      updatedHouse = rows[0];
+    }
 
     const {
       ac = null,
@@ -281,7 +281,6 @@ const updateHouseProperty = async (req, res) => {
       fire_safety = null,
       club_house = null,
     } = req.body;
-
 
     const houseFacilitiesObj = {
       ac,
@@ -748,7 +747,7 @@ const listPropertiesOnSearch = async (req, res) => {
       furnishing_type = undefined,
       four_wheeler_parking = undefined,
       two_wheeler_parking = undefined,
-      property_with_image = undefined,
+      property_with_image = true,
       property_type = undefined,
     } = filters || {};
 
@@ -771,29 +770,24 @@ const listPropertiesOnSearch = async (req, res) => {
     const allKeywords = keywords.flat();
 
     const queryForHouse = `
-    SELECT    houses.id as houses_id,*,housefacilities.id as housefacilities_id 
+    SELECT houses.id as houses_id,*, housefacilities.id as housefacilities_id
     FROM houses
-    LEFT JOIN housefacilities
-    on houses.id=housefacilities.house_id
-    LEFT JOIN propertymediatable 
-    ON houses.id = propertymediatable.house_id
+    LEFT JOIN housefacilities ON houses.id = housefacilities.house_id
     WHERE city ILIKE $2
       AND locality ILIKE ANY (
         SELECT '%' || pattern || '%'
         FROM unnest($1::text[]) AS pattern
-      )
-      AND (bhk_type = ANY ($5) OR $5 IS NULL)
-      AND (preferred_tenants = ANY ($6) OR $6 IS NULL)
-      AND (rent >= $7 OR $7 IS NULL)
-      AND (rent <= $8 OR $8 IS NULL)
-      AND (facing = $9 OR $9 IS NULL)
-      AND (available_from <= $10 OR $10 IS NULL)
-      AND (available_from >= $11 OR $11 IS NULL)
-      AND (furnishing_type = ANY ($12) OR $12 IS NULL)
-      AND (four_wheeler_parking = $13 OR $13 IS NULL)
-      AND (two_wheeler_parking = $14 OR $14 IS NULL)
-      AND (media_url = $15 OR $15 IS NULL)
-      AND (property_type = $16 OR $16 IS NULL)
+      )AND (bhk_type = ANY ($3) OR $3 IS NULL)
+      AND (preferred_tenants = ANY ($4) OR $4 IS NULL)
+      AND (rent >= $5 OR $5 IS NULL)
+      AND (rent <= $6 OR $6 IS NULL)
+      AND (facing = $7 OR $7 IS NULL)
+      AND (available_from <= $8 OR $8 IS NULL)
+      AND (available_from >= $9 OR $9 IS NULL)
+      AND (furnishing_type = ANY ($10) OR $10 IS NULL)
+      AND (four_wheeler_parking = $11 OR $11 IS NULL)
+      AND (two_wheeler_parking = $12 OR $12 IS NULL)
+      AND (property_type = $13 OR $13 IS NULL)
     ORDER BY (
       SELECT COUNT(DISTINCT word)
       FROM regexp_split_to_table(locality, E'\\s+') AS word
@@ -802,132 +796,195 @@ const listPropertiesOnSearch = async (req, res) => {
         FROM unnest($1::text[]) AS pattern
       )
     ) DESC, houses.updated_at DESC
-    OFFSET $3
-    LIMIT $4;
-`;
-
-    const queryForhouseCount = `
-SELECT COUNT(*) AS total_count
-FROM houses
-LEFT JOIN housefacilities
-    on houses.id=housefacilities.house_id
-    LEFT JOIN propertymediatable 
-    ON houses.id = propertymediatable.house_id
-WHERE city ILIKE $2
-  AND locality ILIKE ANY (
-    SELECT '%' || pattern || '%'
-    FROM unnest($1::text[]) AS pattern
-  )
-  AND (bhk_type = ANY ($3) OR $3 IS NULL)
-  AND (preferred_tenants = ANY ($4) OR $4 IS NULL)
-  AND (rent >= $5 OR $5 IS NULL)
-  AND (rent <= $6 OR $6 IS NULL)
-  AND (facing = $7 OR $7 IS NULL)
-  AND (available_from <= $8 OR $8 IS NULL)
-  AND (available_from >= $9 OR $9 IS NULL)
-  AND (furnishing_type = ANY ($10) OR $10 IS NULL)
-  AND (four_wheeler_parking = $11 OR $11 IS NULL)
-  AND (two_wheeler_parking = $12 OR $12 IS NULL)
-  AND (media_url = $13 OR $13 IS NULL)
-  AND (property_type = $14 OR $14 IS NULL)
-  ;
-
-`;
-    const queryForPg = `
-    SELECT    pgs.id as pgs_id,*,pgfacilities.id as pgfacilities_id 
-    FROM pgs
-    LEFT JOIN pgfacilities
-    on pgs.id=pgfacilities.pg_id
-    WHERE city ILIKE $2
-      AND locality ILIKE ANY (
-        SELECT '%' || pattern || '%'
-        FROM unnest($1::text[]) AS pattern
-      )
-    ORDER BY (
-      SELECT COUNT(DISTINCT word)
-      FROM regexp_split_to_table(locality, E'\\s+') AS word
-      WHERE word ILIKE ANY (
-        SELECT '%' || pattern || '%'
-        FROM unnest($1::text[]) AS pattern
-      )
-    ) DESC, pgs.updated_at DESC
-    OFFSET $3
-    LIMIT $4; 
-`;
-    const queryForpgCount = `
-SELECT COUNT(*) AS total_count
-FROM pgs
-WHERE city ILIKE $2
-  AND locality ILIKE ANY (
-    SELECT '%' || pattern || '%'
-    FROM unnest($1::text[]) AS pattern
-  );
-
-`;
+    OFFSET $14
+    LIMIT $15;
+  `;
 
     if (propertyType == "House" || propertyType == "house") {
-      const data = await db.query(queryForHouse, [
+      const houseData = await db.query(queryForHouse, [
         allKeywords,
         city,
+        bhk_type,
+        preferred_tenants,
+        price_greater_than,
+        price_less_than,
+        facing,
+        available_date_less_than,
+        available_date_greater_than,
+        furnishing_type,
+        four_wheeler_parking,
+        two_wheeler_parking,
+        property_type,
         10 * (pgNo - 1),
         10,
-        bhk_type,
-        preferred_tenants,
-        price_greater_than,
-        price_less_than,
-        facing,
-        available_date_less_than,
-        available_date_greater_than,
-        furnishing_type,
-        four_wheeler_parking,
-        two_wheeler_parking,
-        property_with_image,
-        property_type,
       ]);
-      const { rows } = data;
 
-      const count = await db.query(queryForhouseCount, [
-        allKeywords,
-        city,
-        bhk_type,
-        preferred_tenants,
-        price_greater_than,
-        price_less_than,
-        facing,
-        available_date_less_than,
-        available_date_greater_than,
-        furnishing_type,
-        four_wheeler_parking,
-        two_wheeler_parking,
-        property_with_image,
-        property_type,
-      ]);
-      //console.log(count);
-      // ...
+      const houseIds = houseData.rows.map((row) => row.houses_id);
+      // const queryForhouseCount = `
+      // SELECT COUNT(*) AS total_count
+      // FROM houses
+      // LEFT JOIN housefacilities
+      //     on houses.id=housefacilities.house_id
+      //     `;
+      // const totalCount = await db.query();
+      const queryForMedia = `
+      SELECT house_id, array_agg(DISTINCT filename) AS file_name,array_agg(DISTINCT media_url) AS media_url
+      FROM propertymediatable
+      WHERE house_id = ANY ($1)
+      GROUP BY house_id;
+    `;
 
-      return res
-        .status(200)
-        .json({ count: count.rows[0].total_count, allhouses: rows });
+      const mediaData = await db.query(queryForMedia, [houseIds]);
+
+      const mergedData = houseData.rows.map((house) => {
+        const media = mediaData.rows.find(
+          (media) => media.house_id === house.houses_id
+        );
+        return {
+          ...house,
+          file_name: media ? media.file_name : [],
+          media_url: media ? media.media_url : [],
+        };
+      });
+
+      let housesData = mergedData;
+      if (property_with_image) {
+        housesData = mergedData.filter((data) => {
+          // console.log(data);
+          return data.file_name.length > 0;
+        });
+      }
+
+      return res.status(200).json({ allhouses: housesData });
+
+      // mergedData contains the combined information from house and media tables
+      // Rest of your code
     } else {
-      const { rows } = await db.query(queryForPg, [
-        allKeywords,
-        city,
-        10 * (pgNo - 1),
-        10,
-      ]);
-
-      const count = await db.query(queryForpgCount, [allKeywords, city]);
-
       return res
         .status(200)
-        .json({ count: count.rows[0].total_count, allpgs: rows });
+        .json({ allhouses: "for pgs the listing is on halt" });
     }
-  } catch (err) {
-    res.status(400).json({
-      message: err.toString(),
-    });
+  } catch (e) {
+    console.log(e);
+    res.status(400).json(e);
   }
 };
+
+// `;
+//     const queryForPg = `
+//     SELECT    pgs.id as pgs_id,*,pgfacilities.id as pgfacilities_id
+//     FROM pgs
+//     LEFT JOIN pgfacilities
+//     on pgs.id=pgfacilities.pg_id
+//     WHERE city ILIKE $2
+//       AND locality ILIKE ANY (
+//         SELECT '%' || pattern || '%'
+//         FROM unnest($1::text[]) AS pattern
+//       )
+//     ORDER BY (
+//       SELECT COUNT(DISTINCT word)
+//       FROM regexp_split_to_table(locality, E'\\s+') AS word
+//       WHERE word ILIKE ANY (
+//         SELECT '%' || pattern || '%'
+//         FROM unnest($1::text[]) AS pattern
+//       )
+//     ) DESC, pgs.updated_at DESC
+//     OFFSET $3
+//     LIMIT $4;
+// `;
+//     const queryForpgCount = `
+// SELECT COUNT(*) AS total_count
+// FROM pgs
+// WHERE city ILIKE $2
+//   AND locality ILIKE ANY (
+//     SELECT '%' || pattern || '%'
+//     FROM unnest($1::text[]) AS pattern
+//   );
+
+// `;
+
+//     if (propertyType == "House" || propertyType == "house") {
+//       const data = await db.query(queryForHouse, [
+//         allKeywords,
+//         city,
+//         bhk_type,
+//         preferred_tenants,
+//         price_greater_than,
+//         price_less_than,
+//         facing,
+//         available_date_less_than,
+//         available_date_greater_than,
+//         furnishing_type,
+//         four_wheeler_parking,
+//         two_wheeler_parking,
+//         property_type,
+//         10 * (pgNo - 1),
+//         10,
+//       ]);
+//       const { rows } = data;
+
+//       for (row in rows) {
+//       }
+
+//       // const mediaData = await db.query(queryForHouseMedia, [
+//       //   allKeywords,
+//       //   city,
+//       //   bhk_type,
+//       //   preferred_tenants,
+//       //   price_greater_than,
+//       //   price_less_than,
+//       //   facing,
+//       //   available_date_less_than,
+//       //   available_date_greater_than,
+//       //   furnishing_type,
+//       //   four_wheeler_parking,
+//       //   two_wheeler_parking,
+//       //   media_url,
+//       //   property_type,
+//       //   10 * (pgNo - 1),
+//       //   10,
+//       // ]);
+
+//       // const count = await db.query(queryForhouseCount, [
+//       //   allKeywords,
+//       //   city,
+//       //   bhk_type,
+//       //   preferred_tenants,
+//       //   price_greater_than,
+//       //   price_less_than,
+//       //   facing,
+//       //   available_date_less_than,
+//       //   available_date_greater_than,
+//       //   furnishing_type,
+//       //   four_wheeler_parking,
+//       //   two_wheeler_parking,
+//       //   property_with_image,
+//       //   property_type,
+//       // ]);
+//       //console.log(count);
+//       // ...
+
+//       return res.status(200).json({ allhouses: rows });
+//     } else {
+//       const { rows } = await db.query(queryForPg, [
+//         allKeywords,
+//         city,
+//         10 * (pgNo - 1),
+//         10,
+//       ]);
+
+//       const count = await db.query(queryForpgCount, [allKeywords, city]);
+
+//       return res
+//         .status(200)
+//         .json({ count: count.rows[0].total_count, allpgs: rows });
+//     }
+//   } catch (err) {
+//     res.status(400).json({
+//       message: err.toString(),
+//     });
+//   }
+// };
 
 const shortlistProperty = async (req, res) => {
   try {
@@ -1033,9 +1090,8 @@ const shortlistProperty = async (req, res) => {
       );
 
       return res.status(200).json({ message: "Updated PG Shortlists" });
-    }
-    else{
-      throw new Error("propertyType doesn't exist")
+    } else {
+      throw new Error("propertyType doesn't exist");
     }
   } catch (err) {
     res.status(400).json({
@@ -1130,7 +1186,8 @@ const getPropertyData = async (req, res) => {
     res.status(200).json({ data: rows[0] });
   } catch (e) {
     res.status(401).json({ message: "not able to find property" });
-  }}
+  }
+};
 const getUser = async (req, res) => {
   const userId = req.user.id;
 
