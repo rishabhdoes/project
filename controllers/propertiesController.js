@@ -1038,7 +1038,7 @@ const shortlistProperty = async (req, res) => {
               "Max limit reached. Please remove some from shortlists before shortlisting more properties"
             );
 
-        newHouseShortlists = [...newHouseShortlists, propertyId];
+        newHouseShortlists = [...oldHouseShortlists, propertyId];
         countShortlists += 1;
       }
 
@@ -1215,6 +1215,72 @@ const getUser = async (req, res) => {
   }
 };
 
+const getOwnerDetails = async (req, res) => {
+  try {
+    const { houseId } = req.params;
+    if (!houseId || !req.user) {
+      throw new Error("Invalid request");
+    }
+
+    const { rows, rowCount } = await db.query(
+      "SELECT * FROM houses WHERE id = $1",
+      [houseId]
+    );
+
+    if (rowCount <= 0) {
+      throw new Error("House does not exist");
+    } else {
+      const ownerId = rows[0].owner_id;
+
+      const data = await db.query(
+        "SELECT owners_contacted, count_owner_contacted, name, email, phone_number FROM users WHERE id = $1",
+        [ownerId]
+      );
+
+      const userData = data.rows[0];
+      const {
+        name,
+        email,
+        phone_number,
+        count_owner_contacted,
+        owners_contacted,
+      } = userData;
+
+      // if user is himself the owner or
+      // he has already seen contacts for this property
+      // show owner details
+      if (ownerId === req.user.id || owners_contacted.includes(houseId)) {
+        return res
+          .status(200)
+          .json({ exists: true, name, email, phone_number });
+      } else {
+        // if user currently has more limit to view owners
+        if (count_owner_contacted > 0) {
+          const ownerContacted = [...owners_contacted, houseId];
+          const countOwnerContacted = count_owner_contacted - 1;
+
+          await db.query(
+            "UPDATE users SET owners_contacted = $1, count_owner_contacted = $2 WHERE id = $3",
+            [ownerContacted, countOwnerContacted, ownerId]
+          );
+
+          return res
+            .status(200)
+            .json({ exists: true, name, phone_number, email });
+        } else {
+          // user has reached his max free limit
+          return res.status(200).json({
+            exists: false,
+            message: "You have used your free credits",
+          });
+        }
+      }
+    }
+  } catch (err) {
+    res.status(400).json(err);
+  }
+};
+
 module.exports = {
   newHouseProperty,
   newPgProperty,
@@ -1227,4 +1293,5 @@ module.exports = {
   getHouse,
   getPropertyData,
   getUser,
+  getOwnerDetails,
 };

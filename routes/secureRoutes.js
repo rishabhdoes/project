@@ -4,7 +4,15 @@ const { userAuth } = require("../middleware/auth-middleware");
 // image upload
 const multer = require("multer");
 const { storage } = require("../cloudinary");
-const upload = multer({ storage });
+const upload = multer({
+  storage,
+  limits: {
+    // Set the maximum file size (in bytes)
+    fileSize: 1 * 1024 * 1024, // 1MB
+    // Set the maximum number of files that can be uploaded
+    files: 5,
+  },
+});
 
 const {
   newHouseProperty,
@@ -16,6 +24,7 @@ const {
   showShortlists,
   getHouse,
   getUser,
+  getOwnerDetails,
 } = require("../controllers/propertiesController");
 const { updateProfile } = require("../controllers/profileController");
 
@@ -64,12 +73,13 @@ router.post(
   upload.array("image"),
   handleHouseImageUpload
 );
-
 router.get("/getHouseImage/:houseId", getImages);
 router.put("/house/uploadImage/change-description/:imageId", handleDescription);
-
 router.delete("/house/deleteImage/:imageId", handleDeleteImage);
 // profile
 router.post("/updateProfile", updateProfile)
+
+// owner details
+router.get("/user/listings/get-owner-details/:houseId", getOwnerDetails);
 
 module.exports = router;
