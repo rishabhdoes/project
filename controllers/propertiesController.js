@@ -708,19 +708,23 @@ const updatePgProperty = async (req, res) => {
 
 const getMyListings = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const {id:userId} = req.user;
+    const { propertyType } = req.query;
 
-    const houses = await db.query(
-      "SELECT * FROM houses LEFT JOIN houseFacilities ON houses.id = houseFacilities.house_id WHERE houses.owner_id = $1",
-      [userId]
-    );
-
-    const pgs = await db.query(
-      "SELECT * FROM pgs LEFT OUTER JOIN pgfacilities ON pgs.id = pgfacilities.pg_id WHERE pgs.owner_id = $1",
-      [userId]
-    );
-
-    res.status(200).json({ house: houses.rows, pg: pgs.rows });
+    let listings;
+    if(propertyType === 'pgs'){
+      listings = await db.query(
+        "SELECT * FROM pgs LEFT OUTER JOIN pgfacilities ON pgs.id = pgfacilities.pg_id WHERE pgs.owner_id = $1",
+        [userId]
+      );
+    }  
+    else {
+      listings = await db.query(
+        "SELECT houses.id AS houses_id,* ,houseFacilities.id AS facilities_id  FROM houses LEFT JOIN houseFacilities ON houses.id = houseFacilities.house_id WHERE houses.owner_id = $1",
+        [userId]
+      );
+    }
+    res.status(200).json({ listings: listings.rows });
   } catch (err) {
     res.status(400).json({
       message: err.toString(),
@@ -917,6 +921,11 @@ WHERE city ILIKE $2
       ]);
 
       const count = await db.query(queryForpgCount, [allKeywords, city]);
+      // if(req.user) {
+      //   const shortlistQuery = `SELECT COUNT(*) AS total_count
+      //     FROM users
+      //     WHERE city ILIKE $2;`
+      // }
 
       return res
         .status(200)
@@ -1047,7 +1056,7 @@ const shortlistProperty = async (req, res) => {
 const showShortlists = async (req, res) => {
   try {
     const { propertyType } = req.query;
-    const userId = req.user.id;
+    const {id:userId} = req.user;
 
     const { rows } = await db.query("SELECT * FROM users WHERE id = $1", [
       userId,
@@ -1055,7 +1064,7 @@ const showShortlists = async (req, res) => {
 
     let shortlists = [];
 
-    if (propertyType === "house") {
+    if (propertyType === "houses") {
       shortlists = rows[0].house_shortlists;
 
       const data = await Promise.all(
@@ -1066,18 +1075,21 @@ const showShortlists = async (req, res) => {
           );
 
           const data = await db.query(
-            "SELECT * FROM propertyMediaTable WHERE house_id = $1",
+            "SELECT * FROM propertymediatable WHERE house_id = $1",
             [shortlistId]
           );
 
-          if (data.rows.length > 0) rows[0].push(data.rows);
+
+          if (data.rows.length > 0) {
+            rows[0] = {...rows[0], images:data.rows}
+          }
 
           return rows[0];
         })
       );
 
       return res.status(200).json({ data });
-    } else if (propertyType === "pg") {
+    } else if (propertyType === "pgs") {
       shortlists = rows[0].pg_shortlists;
 
       const data = await Promise.all(
@@ -1098,14 +1110,14 @@ const showShortlists = async (req, res) => {
         })
       );
 
-      return res.status(200).json({ data });
+      return res.status(200).json(data );
     } else {
       throw Error({
         message: "You are lost!",
       });
     }
   } catch (err) {
-    return res.status(400).json(err.message);
+    return res.status(400).json(err);
   }
 };
 

@@ -115,7 +115,7 @@ const nearbyLocalities = async (req, res) => {
     ]);
 
     const suggestions = response.map((res) =>
-      res.data.results.map((locationData) => locationData.name)
+      res.data.results.map((locationData) => locationData)
     );
 
     const allSuggestions = [...new Set(suggestions.flat())];

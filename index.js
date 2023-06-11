@@ -11,7 +11,7 @@ require("./middleware/passport-middleware");
 
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors({ origin: "https://homewale.com", credentials: true }));
+app.use(cors({ origin: CLIENT_URL, credentials: true }));
 // app.use(cors());
 app.use(passport.initialize());
 app.use(bodyParser.urlencoded({ extended: false }));
