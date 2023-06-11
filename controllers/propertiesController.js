@@ -747,7 +747,7 @@ const listPropertiesOnSearch = async (req, res) => {
       furnishing_type = undefined,
       four_wheeler_parking = undefined,
       two_wheeler_parking = undefined,
-      property_with_image = true,
+      property_with_image = undefined,
       property_type = undefined,
     } = filters || {};
 
