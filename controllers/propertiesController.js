@@ -1121,7 +1121,7 @@ const showShortlists = async (req, res) => {
       const data = await Promise.all(
         shortlists.map(async (shortlistId) => {
           const { rows } = await db.query(
-            "SELECT houses.id, houses.available_from, houses.builtup_area, houses.rent, houses.deposit, houses.furnishing_type, houses.bhk_type FROM houses WHERE houses.id = $1",
+            "SELECT houses.id, houses.available_from, houses.builtup_area, houses.rent, houses.deposit, houses.furnishing_type, houses.bhk_type, houses.locality FROM houses WHERE houses.id = $1",
             [shortlistId]
           );
 
