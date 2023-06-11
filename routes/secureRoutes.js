@@ -17,6 +17,7 @@ const {
   getHouse,
   getUser,
 } = require("../controllers/propertiesController");
+const { updateProfile } = require("../controllers/profileController");
 
 const {
   handleHouseImageUpload,
@@ -68,5 +69,7 @@ router.get("/getHouseImage/:houseId", getImages);
 router.put("/house/uploadImage/change-description/:imageId", handleDescription);
 
 router.delete("/house/deleteImage/:imageId", handleDeleteImage);
+// profile
+router.post("/updateProfile", updateProfile)
 
 module.exports = router;
