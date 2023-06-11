@@ -14,6 +14,7 @@ const queries = {
         forgot_password_hash VARCHAR (255),
         count_shortlists NUMERIC DEFAULT 0 CHECK (shortlisted_count >= 0), 
         count_owner_contacted NUMERIC DEFAULT 0,
+        owners_contacted UUID [] DEFAULT '{}',
         created_at timestamp DEFAULT CURRENT_TIMESTAMP,
         updated_at timestamp DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY(id)

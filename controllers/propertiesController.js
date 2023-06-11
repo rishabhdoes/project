@@ -707,17 +707,16 @@ const updatePgProperty = async (req, res) => {
 
 const getMyListings = async (req, res) => {
   try {
-    const {id:userId} = req.user;
+    const { id: userId } = req.user;
     const { propertyType } = req.query;
 
     let listings;
-    if(propertyType === 'pgs'){
+    if (propertyType === "pgs") {
       listings = await db.query(
         "SELECT * FROM pgs LEFT OUTER JOIN pgfacilities ON pgs.id = pgfacilities.pg_id WHERE pgs.owner_id = $1",
         [userId]
       );
-    }  
-    else {
+    } else {
       listings = await db.query(
         "SELECT houses.id AS houses_id,* ,houseFacilities.id AS facilities_id  FROM houses LEFT JOIN houseFacilities ON houses.id = houseFacilities.house_id WHERE houses.owner_id = $1",
         [userId]
@@ -1107,7 +1106,7 @@ const shortlistProperty = async (req, res) => {
 const showShortlists = async (req, res) => {
   try {
     const { propertyType } = req.query;
-    const {id:userId} = req.user;
+    const { id: userId } = req.user;
 
     const { rows } = await db.query("SELECT * FROM users WHERE id = $1", [
       userId,
@@ -1130,9 +1129,8 @@ const showShortlists = async (req, res) => {
             [shortlistId]
           );
 
-
           if (data.rows.length > 0) {
-            rows[0] = {...rows[0], images:data.rows}
+            rows[0] = { ...rows[0], images: data.rows };
           }
 
           return rows[0];
@@ -1161,7 +1159,7 @@ const showShortlists = async (req, res) => {
         })
       );
 
-      return res.status(200).json(data );
+      return res.status(200).json(data);
     } else {
       throw Error({
         message: "You are lost!",
@@ -1195,6 +1193,7 @@ const getPropertyData = async (req, res) => {
     res.status(401).json({ message: "not able to find property" });
   }
 };
+
 const getUser = async (req, res) => {
   const userId = req.user.id;
 
