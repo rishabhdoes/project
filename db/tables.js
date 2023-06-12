@@ -74,6 +74,7 @@ const queries = {
        isActive BOOLEAN DEFAULT TRUE,
        parking VARCHAR(255),
        status VARCHAR(255) DEFAULT 'pending',
+       media_count NUMERIC(2,0) DEFAULT 0,
        created_at timestamp DEFAULT CURRENT_TIMESTAMP,
        updated_at timestamp DEFAULT CURRENT_TIMESTAMP,
        PRIMARY KEY(id),
