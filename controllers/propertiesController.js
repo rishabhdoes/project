@@ -823,13 +823,46 @@ const listPropertiesOnSearch = async (req, res) => {
       ]);
 
       const houseIds = houseData.rows.map((row) => row.houses_id);
-      // const queryForhouseCount = `
-      // SELECT COUNT(*) AS total_count
-      // FROM houses
-      // LEFT JOIN housefacilities
-      //     on houses.id=housefacilities.house_id
-      //     `;
-      // const totalCount = await db.query();
+
+      const queryForhouseCount = `
+      SELECT COUNT(*) AS total_count
+      FROM houses
+      LEFT JOIN housefacilities ON houses.id = housefacilities.house_id
+      WHERE city ILIKE $2
+        AND locality ILIKE ANY (
+          SELECT '%' || pattern || '%'
+          FROM unnest($1::text[]) AS pattern
+        )AND (bhk_type = ANY ($3) OR $3 IS NULL)
+        AND (preferred_tenants = ANY ($4) OR $4 IS NULL)
+        AND (rent >= $5 OR $5 IS NULL)
+        AND (rent <= $6 OR $6 IS NULL)
+        AND (facing = $7 OR $7 IS NULL)
+        AND (available_from <= $8 OR $8 IS NULL)
+        AND (available_from >= $9 OR $9 IS NULL)
+        AND (furnishing_type = ANY ($10) OR $10 IS NULL)
+        AND (four_wheeler_parking = $11 OR $11 IS NULL)
+        AND (two_wheeler_parking = $12 OR $12 IS NULL)
+        AND (property_type = $13 OR $13 IS NULL)
+        AND(media_count>=$14 OR $14 IS NULL)
+          `;
+
+      const totalCount = await db.query(queryForhouseCount, [
+        allKeywords,
+        city,
+        bhk_type,
+        preferred_tenants,
+        price_greater_than,
+        price_less_than,
+        facing,
+        available_date_less_than,
+        available_date_greater_than,
+        furnishing_type,
+        four_wheeler_parking,
+        two_wheeler_parking,
+        property_type,
+        property_with_image,
+      ]);
+
       const queryForMedia = `
       SELECT house_id, array_agg(DISTINCT filename) AS file_name,array_agg(DISTINCT media_url) AS media_url
       FROM propertymediatable
@@ -858,7 +891,12 @@ const listPropertiesOnSearch = async (req, res) => {
         });
       }
 
-      return res.status(200).json({ allhouses: housesData });
+      return res
+        .status(200)
+        .json({
+          totalCount: totalCount?.rows[0]?.total_count,
+          allhouses: housesData,
+        });
 
       // mergedData contains the combined information from house and media tables
       // Rest of your code
