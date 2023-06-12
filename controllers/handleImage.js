@@ -19,6 +19,11 @@ const handleHouseImageUpload = async (req, res) => {
       })
     );
 
+    await db.query(
+      `UPDATE houses SET media_count = media_count + ${imageFiles.length} WHERE id = $1`,
+      [houseId]
+    );
+
     return res.status(200).json(imageData);
   } catch (err) {
     return res.status(400).json("Error in image uploading");
@@ -66,7 +71,7 @@ const handleDeleteImage = async (req, res) => {
     }
 
     const data = await db.query(
-      "SELECT id, user_id, filename FROM propertyMediaTable WHERE id = $1",
+      "SELECT id, user_id, filename, house_id FROM propertyMediaTable WHERE id = $1",
       [imageId]
     );
 
@@ -77,8 +82,14 @@ const handleDeleteImage = async (req, res) => {
     } else if (rows[0].user_id !== req.user.id) {
       throw new Error("You are not authorized");
     } else {
+      const houseId = rows[0].house_id;
+
       await cloudinary.uploader.destroy(rows[0].filename);
       await db.query(`DELETE FROM propertyMediaTable WHERE id = $1`, [imageId]);
+      await db.query(
+        `UPDATE houses SET media_count = media_count - 1 WHERE id = $1`,
+        [houseId]
+      );
 
       res.status(200).json("Image deleted");
     }
@@ -92,7 +103,7 @@ const getImages = async (req, res) => {
 
   try {
     const { rows } = await db.query(
-      "SELECT id, filename, description FROM propertyMediatable WHERE house_id = $1",
+      "SELECT id, filename, description, media_url FROM propertyMediatable WHERE house_id = $1",
       [houseId]
     );
     return res.status(200).json(rows);
