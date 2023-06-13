@@ -1,4 +1,4 @@
-const { JWT_SECRET } = require("../config");
+const { JWT_SECRET, SENDER_EMAIL } = require("../config");
 const db = require("../db");
 const { sign } = require("jsonwebtoken");
 const { hash, compare } = require("bcryptjs");
@@ -36,7 +36,7 @@ const register = async (req, res) => {
     );
 
     mailTransport().sendMail({
-      from: "yesbroker@gmail.com",
+      from: SENDER_EMAIL,
       to: email,
       subject: "Verify your email account",
       html: `<h1>${OTP}</h1>`,
@@ -150,7 +150,7 @@ const forgotPassword = async (req, res) => {
 
   try {
     mailTransport().sendMail({
-      from: "yesbroker@gmail.com",
+      from: SENDER_EMAIL,
       to: email,
       subject: "Change your password",
       html: `<a href="${link}">Click here to reset password</a>`,
