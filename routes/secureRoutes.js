@@ -25,6 +25,7 @@ const {
   getHouse,
   getUser,
   getOwnerDetails,
+  getPg,
 } = require("../controllers/propertiesController");
 const { updateProfile } = require("../controllers/profileController");
 
@@ -53,6 +54,7 @@ router.post(
 );
 
 router.get("/gethouse", getHouse);
+router.get("/getpg", getPg);
 
 // pgs
 router.post("/newProperty/pg/create", newPgProperty);
@@ -60,6 +62,7 @@ router.post("/newProperty/pg/update/:pgId", updatePgProperty);
 
 // fetch all user listings
 router.get("/user/me", getUser);
+
 router.get("/user/mylistings", getMyListings);
 
 // shortlist properties
@@ -77,7 +80,7 @@ router.get("/getHouseImage/:houseId", getImages);
 router.put("/house/uploadImage/change-description/:imageId", handleDescription);
 router.delete("/house/deleteImage/:imageId", handleDeleteImage);
 // profile
-router.post("/updateProfile", updateProfile)
+router.post("/updateProfile", updateProfile);
 
 // owner details
 router.get("/user/listings/get-owner-details/:houseId", getOwnerDetails);
