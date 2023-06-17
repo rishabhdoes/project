@@ -85,4 +85,8 @@ router.post("/updateProfile", updateProfile);
 // owner details
 router.get("/user/listings/get-owner-details/:houseId", getOwnerDetails);
 
+//admin routes
+
+router.get("/admin");
+
 module.exports = router;

@@ -1257,6 +1257,73 @@ const getOwnerDetails = async (req, res) => {
   }
 };
 
+const getAdminPropertyList = async (req, res, next) => {
+  try {
+    const {
+      ownerEmail = null,
+      ownerName = null,
+      pgNo = 0,
+      startDate = null,
+      lastDate = null,
+      propertyType = "both",
+    } = req.body;
+
+    // Assuming today's date if lastDate is not provided
+
+    const today = new Date().toISOString().split("T")[0];
+    const assumedLastDate = lastDate || today;
+
+    const queryForHouse = `
+  SELECT houses.*
+  FROM houses
+  LEFT JOIN users ON houses.owner_id = users.id
+  WHERE (users.email = $1 OR $1 IS NULL)
+  AND (users.name = $2 OR $2 IS NULL)
+  ${
+    startDate && assumedLastDate
+      ? "AND houses.updated_at BETWEEN $3 AND $4"
+      : ""
+  }
+  OFFSET $${startDate && assumedLastDate ? "5" : "3"}
+  LIMIT $${startDate && assumedLastDate ? "6" : "4"};
+`;
+
+    const queryForPg = `
+SELECT pgs.*
+FROM pgs
+LEFT JOIN users ON pgs.owner_id = users.id
+WHERE (users.email = $1 OR $1 IS NULL)
+AND (users.name = $2 OR $2 IS NULL)
+${startDate && assumedLastDate ? "AND pgs.updated_at BETWEEN $3 AND $4" : ""}
+OFFSET $${startDate && assumedLastDate ? "5" : "3"}
+LIMIT $${startDate && assumedLastDate ? "6" : "4"};
+
+`;
+
+    let queryParams = [ownerEmail, ownerName];
+    if (startDate && assumedLastDate) {
+      queryParams.push(startDate, assumedLastDate);
+    }
+    queryParams.push(10 * (pgNo - 1), 10);
+
+    //console.log(queryParams);
+
+    if (propertyType == "House") {
+      const houseData = await db.query(queryForHouse, queryParams);
+      return res.status(200).json({ houses: houseData?.rows });
+    } else if (propertyType == "pg") {
+      const pgData = await db.query(queryForPg, queryParams);
+      res.status(200).json({ pgs: pgData?.rows });
+    } else {
+      const houseData = await db.query(queryForHouse, queryParams);
+      const pgData = await db.query(queryForPg, queryParams);
+
+      res.status(200).json({ houses: houseData?.rows[0], pgs: pgData?.rows });
+    }
+  } catch (e) {
+    next(e);
+  }
+};
 module.exports = {
   newHouseProperty,
   newPgProperty,
@@ -1271,4 +1338,5 @@ module.exports = {
   getUser,
   getOwnerDetails,
   getPg,
+  getAdminPropertyList,
 };
