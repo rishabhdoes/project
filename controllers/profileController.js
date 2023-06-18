@@ -20,7 +20,6 @@ const getProfile = async (req, res) => {
     });
   }
 };
-
 const updateProfile = async (req, res) => {
   try {
     const { id, newName, newEmail, newPhoneNumber } = req.body;
@@ -45,7 +44,25 @@ const updateProfile = async (req, res) => {
   }
 };
 
+const toggleUserBlockedStatus = async (req, res, next) => {
+  try {
+    const { userId } = req.body;
+
+    const queryToggleIsBlocked = `
+  UPDATE users
+  SET is_blocked = NOT is_blocked
+  WHERE id = $1;
+`;
+
+    await db.query(queryToggleIsBlocked, [userId]);
+    res.status(200).json({ message: "Updated!!" });
+  } catch (e) {
+    next(e);
+  }
+};
+
 module.exports = {
   updateProfile,
   getProfile,
+  toggleUserBlockedStatus,
 };
