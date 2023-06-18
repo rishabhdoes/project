@@ -791,6 +791,9 @@ const listPropertiesOnSearch = async (req, res) => {
     } else if (available_from === "after 30 days") {
       available_date_greater_than += new Date() + 30 * 24 * 60 * 60 * 1000;
     }
+
+    console.log(text);
+
     const keywords = text.map((textArray) => {
       const op = textArray.split(",");
       return op;
@@ -1162,19 +1165,23 @@ const getPropertyData = async (req, res) => {
 
     if (!id) throw new Error("id invalid");
 
-    const query = `SELECT    houses.id as houses_id,*,housefacilities.id as housefacilities_id 
+    const query = `SELECT houses.id as houses_id,*,housefacilities.id as housefacilities_id 
    FROM houses
    LEFT JOIN housefacilities
    on houses.id=housefacilities.house_id
    LEFT JOIN propertymediatable 
    ON houses.id = propertymediatable.house_id
    where houses.id=$1
-
 `;
-
     const { rows } = await db.query(query, [id]);
 
-    res.status(200).json({ data: rows[0] });
+    const data = await db.query(
+      "SELECT media_url, description FROM propertyMediaTable WHERE house_id = $1",
+      [id]
+    );
+    const media = data.rows;
+
+    res.status(200).json({ ...rows[0], media });
   } catch (e) {
     res.status(401).json({ message: "not able to find property" });
   }
@@ -1407,6 +1414,16 @@ const deleteProperty = async (req, res, next) => {
     next(error);
   }
 };
+const logout = async (req, res) => {
+  try {
+    return res.status(200).cookie("token", "").json({
+      success: true,
+      message: "Logged out successfully",
+    });
+  } catch (err) {
+    res.status(400).json(err);
+  }
+};
 
 module.exports = {
   newHouseProperty,
@@ -1420,6 +1437,7 @@ module.exports = {
   getHouse,
   getPropertyData,
   getUser,
+  logout,
   getOwnerDetails,
   getPg,
   getAdminPropertyList,

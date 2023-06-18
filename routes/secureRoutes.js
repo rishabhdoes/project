@@ -26,6 +26,7 @@ const {
   getUser,
   getOwnerDetails,
   getPg,
+  logout,
 } = require("../controllers/propertiesController");
 const { updateProfile } = require("../controllers/profileController");
 
@@ -107,6 +108,7 @@ router.get(
   checkUserVerified,
   getOwnerDetails
 );
+router.get("/logout", logout);
 
 //
 

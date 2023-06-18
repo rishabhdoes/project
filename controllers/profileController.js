@@ -1,5 +1,6 @@
 const db = require("../db");
 const { sendMsg } = require("../utils/errors");
+
 const getProfile = async (req, res) => {
   try {
     const { id } = req.body;
