@@ -26,6 +26,7 @@ const {
   getUser,
   getOwnerDetails,
   getPg,
+  logout,
 } = require("../controllers/propertiesController");
 const { updateProfile } = require("../controllers/profileController");
 
@@ -86,6 +87,7 @@ router.post("/updateProfile", updateProfile);
 
 // owner details
 router.get("/user/listings/get-owner-details/:houseId", getOwnerDetails);
+router.get("/logout", logout);
 
 //
 
