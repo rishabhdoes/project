@@ -147,6 +147,9 @@ const updateHouseProperty = async (req, res) => {
       property_type = null,
       water_supply = null,
       rank = null,
+      houseNo = null,
+      pincode = null,
+      address = null,
     } = req.body;
 
     const houseObj = {
@@ -185,6 +188,9 @@ const updateHouseProperty = async (req, res) => {
       property_type,
       rank,
       parking,
+      houseNo,
+      pincode,
+      address,
     };
 
     // default array that contains all columns that exist in houses db
@@ -226,6 +232,9 @@ const updateHouseProperty = async (req, res) => {
       "available_from",
       "parking",
       "rank",
+      "houseNo",
+      "pincode",
+      "address",
     ];
 
     // check whether values are null or not

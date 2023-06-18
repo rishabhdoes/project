@@ -58,7 +58,9 @@ const housesValidation = async (req, res, next) => {
     city,
     locality,
     street,
-
+    address,
+    houseNo,
+    pincode,
     // part 3
     rent,
     rent_negotiable,
@@ -122,7 +124,7 @@ const housesValidation = async (req, res, next) => {
           req.body.longitude = res[1];
         })
         .catch((err) => {
-          throw new Error("Invalid  Locality");
+          throw new Error("Invalid Locality");
         });
 
       if (!street) {
