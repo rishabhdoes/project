@@ -40,10 +40,12 @@ const {
   isHouseOwner,
   housesValidation,
 } = require("../middleware/house-middleware");
+const { checkUserVerified } = require("../middleware/verified-middleware");
 
 const router = Router();
 
 router.use(userAuth);
+router.use(checkUserVerified);
 
 // houses
 router.post("/newProperty/house/create", newHouseProperty);
@@ -85,8 +87,6 @@ router.post("/updateProfile", updateProfile);
 // owner details
 router.get("/user/listings/get-owner-details/:houseId", getOwnerDetails);
 
-//admin routes
-
-router.get("/admin");
+//
 
 module.exports = router;

@@ -802,7 +802,9 @@ const listPropertiesOnSearch = async (req, res) => {
     SELECT houses.id as houses_id,*, housefacilities.id as housefacilities_id
     FROM houses
     LEFT JOIN housefacilities ON houses.id = housefacilities.house_id
-    WHERE city ILIKE $2
+    WHERE is_active='true'
+    AND is_verified='true'
+    AND city ILIKE $2
       AND locality ILIKE ANY (
         SELECT '%' || pattern || '%'
         FROM unnest($1::text[]) AS pattern
@@ -854,7 +856,10 @@ const listPropertiesOnSearch = async (req, res) => {
       SELECT COUNT(*) AS total_count
       FROM houses
       LEFT JOIN housefacilities ON houses.id = housefacilities.house_id
-      WHERE city ILIKE $2
+      WHERE 
+      is_active='true'
+      AND is_verified='true'
+      AND city ILIKE $2
         AND locality ILIKE ANY (
           SELECT '%' || pattern || '%'
           FROM unnest($1::text[]) AS pattern
@@ -928,7 +933,9 @@ const listPropertiesOnSearch = async (req, res) => {
       const queryForPg = `SELECT  pgs.id as pgs_id,*,pgfacilities.id as pgfacilities_id
       FROM pgs
       LEFT JOIN pgfacilities ON pgs.id = pgfacilities.pg_id
-      WHERE city ILIKE $2
+      WHERE is_active='true'
+      AND is_verified='true'
+      AND  city ILIKE $2
         AND locality ILIKE ANY (
           SELECT '%' || pattern || '%'
           FROM unnest($1::text[]) AS pattern
@@ -947,7 +954,9 @@ const listPropertiesOnSearch = async (req, res) => {
       const queryForpgCount = `
       SELECT COUNT(*) AS total_count
       FROM pgs
-      WHERE city ILIKE $2
+      WHERE is_active='true'
+      AND is_verified='true'                                                                                                                                                                                             J 
+      AND  city ILIKE $2
         AND locality ILIKE ANY (
           SELECT '%' || pattern || '%'
           FROM unnest($1::text[]) AS pattern
@@ -1274,11 +1283,15 @@ const getAdminPropertyList = async (req, res, next) => {
     const assumedLastDate = lastDate || today;
 
     const queryForHouse = `
-  SELECT houses.*
+  SELECT houses.id
   FROM houses
-  LEFT JOIN users ON houses.owner_id = users.id
-  WHERE (users.email = $1 OR $1 IS NULL)
+   JOIN users ON houses.owner_id = users.id
+   WHERE is_active='true'
+  AND is_verified='true'
+  AND (users.email = $1 OR $1 IS NULL)
+  
   AND (users.name = $2 OR $2 IS NULL)
+  
   ${
     startDate && assumedLastDate
       ? "AND houses.updated_at BETWEEN $3 AND $4"
@@ -1291,8 +1304,10 @@ const getAdminPropertyList = async (req, res, next) => {
     const queryForPg = `
 SELECT pgs.*
 FROM pgs
-LEFT JOIN users ON pgs.owner_id = users.id
-WHERE (users.email = $1 OR $1 IS NULL)
+ JOIN users ON pgs.owner_id = users.id
+  WHERE is_active='true'
+AND is_verified='true'
+AND (users.email = $1 OR $1 IS NULL)
 AND (users.name = $2 OR $2 IS NULL)
 ${startDate && assumedLastDate ? "AND pgs.updated_at BETWEEN $3 AND $4" : ""}
 OFFSET $${startDate && assumedLastDate ? "5" : "3"}
@@ -1300,30 +1315,99 @@ LIMIT $${startDate && assumedLastDate ? "6" : "4"};
 
 `;
 
+    const queryForhouseCount = `
+  SELECT count(*)
+  FROM houses
+  JOIN users ON houses.owner_id = users.id
+    WHERE is_active='true'
+  AND is_verified='true'
+  AND  (users.email = $1 OR $1 IS NULL)
+  AND (users.name = $2 OR $2 IS NULL)
+  ${
+    startDate && assumedLastDate
+      ? "AND houses.updated_at BETWEEN $3 AND $4"
+      : ""
+  }
+`;
+
+    const queryForpgCount = `
+SELECT count(pgs.id)
+FROM pgs
+ JOIN users ON pgs.owner_id = users.id
+  WHERE is_active='true'
+      AND is_verified='true'
+      AND  (users.email = $1 OR $1 IS NULL)
+AND (users.name = $2 OR $2 IS NULL)
+${startDate && assumedLastDate ? "AND pgs.updated_at BETWEEN $3 AND $4" : ""}
+
+`;
     let queryParams = [ownerEmail, ownerName];
     if (startDate && assumedLastDate) {
       queryParams.push(startDate, assumedLastDate);
     }
-    queryParams.push(10 * (pgNo - 1), 10);
+    let queryParamsForCount = [...queryParams];
 
-    //console.log(queryParams);
+    queryParams.push(10 * (pgNo - 1), 10);
 
     if (propertyType == "House") {
       const houseData = await db.query(queryForHouse, queryParams);
-      return res.status(200).json({ houses: houseData?.rows });
-    } else if (propertyType == "pg") {
+      const countData = await db.query(queryForhouseCount, queryParamsForCount);
+      return res
+        .status(200)
+        .json({ houses: houseData?.rows, count: countData?.rows[0].count });
+    } else if (propertyType == "Pg") {
       const pgData = await db.query(queryForPg, queryParams);
-      res.status(200).json({ pgs: pgData?.rows });
+      const countData = await db.query(queryForpgCount, queryParamsForCount);
+      return res
+        .status(200)
+        .json({ pgs: pgData?.rows, count: countData?.rows[0]?.count });
     } else {
       const houseData = await db.query(queryForHouse, queryParams);
       const pgData = await db.query(queryForPg, queryParams);
+      const countData1 = await db.query(
+        queryForhouseCount,
+        queryParamsForCount
+      );
+      const countData2 = await db.query(queryForpgCount, queryParamsForCount);
 
-      res.status(200).json({ houses: houseData?.rows[0], pgs: pgData?.rows });
+      res.status(200).json({
+        houses: houseData?.rows,
+        pgs: pgData?.rows,
+        count:
+          parseInt(countData1?.rows[0].count) +
+          parseInt(countData2?.rows[0].count),
+      });
     }
   } catch (e) {
     next(e);
   }
 };
+
+const deleteProperty = async (req, res, next) => {
+  try {
+    const { propertyId, propertyType } = req.body;
+    if (propertyType === "House") {
+      const queryUpdateIsActive = `
+  UPDATE houses
+  SET is_active = $1
+  WHERE id = $2;
+`;
+      await db.query(queryUpdateIsActive, [false, propertyId]);
+    } else {
+      const queryUpdateIsActive = `
+    UPDATE pgs
+    SET is_active = $1
+    WHERE id = $2;
+  `;
+
+      await db.query(queryUpdateIsActive, [false, propertyId]);
+    }
+    res.status(200).json({ message: "Updated!!" });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   newHouseProperty,
   newPgProperty,
@@ -1339,4 +1423,5 @@ module.exports = {
   getOwnerDetails,
   getPg,
   getAdminPropertyList,
+  deleteProperty,
 };
