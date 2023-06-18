@@ -25,6 +25,7 @@ const {
   getHouse,
   getUser,
   getOwnerDetails,
+  logout,
 } = require("../controllers/propertiesController");
 const { updateProfile } = require("../controllers/profileController");
 
@@ -77,9 +78,10 @@ router.get("/getHouseImage/:houseId", getImages);
 router.put("/house/uploadImage/change-description/:imageId", handleDescription);
 router.delete("/house/deleteImage/:imageId", handleDeleteImage);
 // profile
-router.post("/updateProfile", updateProfile)
+router.post("/updateProfile", updateProfile);
 
 // owner details
 router.get("/user/listings/get-owner-details/:houseId", getOwnerDetails);
+router.get("/logout", logout);
 
 module.exports = router;
