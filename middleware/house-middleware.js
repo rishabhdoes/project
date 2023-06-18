@@ -17,6 +17,12 @@ const isHouseOwner = async (req, res, next) => {
 
     const house = rows[0];
 
+    const query1 = `SELECT is_user_admin from users WHERE id=$1`;
+
+    const userData = await db.query(query1, [req.user.id]);
+
+    if (userData?.rows[0]?.is_user_admin) return next();
+
     if (house.owner_id !== userId)
       throw new Error("You do not have access to do that");
 

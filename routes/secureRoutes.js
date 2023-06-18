@@ -26,6 +26,7 @@ const {
   getUser,
   getOwnerDetails,
   getPg,
+  logout,
 } = require("../controllers/propertiesController");
 const { updateProfile } = require("../controllers/profileController");
 
@@ -40,15 +41,21 @@ const {
   isHouseOwner,
   housesValidation,
 } = require("../middleware/house-middleware");
+const {
+  checkUserVerified,
+  checkUserBlocked,
+} = require("../middleware/verified-middleware");
 
 const router = Router();
 
 router.use(userAuth);
+router.use(checkUserBlocked);
 
 // houses
-router.post("/newProperty/house/create", newHouseProperty);
+router.post("/newProperty/house/create", checkUserVerified, newHouseProperty);
 router.post(
   "/newProperty/house/update/:houseId",
+  checkUserVerified,
   [isHouseOwner, housesValidation],
   updateHouseProperty
 );
@@ -57,8 +64,12 @@ router.get("/gethouse", getHouse);
 router.get("/getpg", getPg);
 
 // pgs
-router.post("/newProperty/pg/create", newPgProperty);
-router.post("/newProperty/pg/update/:pgId", updatePgProperty);
+router.post("/newProperty/pg/create", checkUserVerified, newPgProperty);
+router.post(
+  "/newProperty/pg/update/:pgId",
+  checkUserVerified,
+  updatePgProperty
+);
 
 // fetch all user listings
 router.get("/user/me", getUser);
@@ -66,23 +77,39 @@ router.get("/user/me", getUser);
 router.get("/user/mylistings", getMyListings);
 
 // shortlist properties
-router.post("/user/property/shortlist", shortlistProperty);
-router.get("/user/myshortlists", showShortlists);
+router.post("/user/property/shortlist", checkUserVerified, shortlistProperty);
+router.get("/user/myshortlists", checkUserVerified, showShortlists);
 
 // media
 router.post(
   "/newProperty/house/uploadImage/:houseId",
+  checkUserVerified,
   isHouseOwner,
   upload.array("image"),
   handleHouseImageUpload
 );
 router.get("/getHouseImage/:houseId", getImages);
-router.put("/house/uploadImage/change-description/:imageId", handleDescription);
-router.delete("/house/deleteImage/:imageId", handleDeleteImage);
+router.put(
+  "/house/uploadImage/change-description/:imageId",
+  checkUserVerified,
+  handleDescription
+);
+router.delete(
+  "/house/deleteImage/:imageId",
+  checkUserVerified,
+  handleDeleteImage
+);
 // profile
 router.post("/updateProfile", updateProfile);
 
 // owner details
-router.get("/user/listings/get-owner-details/:houseId", getOwnerDetails);
+router.get(
+  "/user/listings/get-owner-details/:houseId",
+  checkUserVerified,
+  getOwnerDetails
+);
+router.get("/logout", logout);
+
+//
 
 module.exports = router;
