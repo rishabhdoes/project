@@ -792,7 +792,6 @@ const listPropertiesOnSearch = async (req, res) => {
       available_date_greater_than += new Date() + 30 * 24 * 60 * 60 * 1000;
     }
 
-    console.log(text);
 
     const keywords = text.map((textArray) => {
       const op = textArray.split(",");
