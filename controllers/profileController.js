@@ -1,6 +1,8 @@
+const { JWT_SECRET, SENDER_EMAIL } = require("../config");
 const db = require("../db");
 const { sendMsg } = require("../utils/errors");
-
+const { generateRandomString, mailTransport } = require("../utils/mail");
+const jwt = require("jsonwebtoken");
 const getProfile = async (req, res) => {
   try {
     const { id } = req.body;
@@ -61,8 +63,36 @@ const toggleUserBlockedStatus = async (req, res, next) => {
   }
 };
 
+
+const verifyEmail = async(req, res) => {
+    const user = req.user;
+
+    const id = user?.id;
+    const { email } = req.body;
+    console.log("email:", email)
+
+    const randomString = generateRandomString();
+    const token =
+        jwt.sign({ email: email }, JWT_SECRET, { expiresIn: "15m" }) + randomString;
+    const baseUrl = process.env.CLIENT_URL;
+    const link = `${baseUrl}/resetpassword/${id}/${token}`;
+
+    try {
+        await mailTransport().sendMail({
+            from: SENDER_EMAIL,
+            to: email,
+            subject: "Verify email",
+            html: `<a href="${link}">Click here to verify your email</a>`,
+        });
+        return sendMsg(res, 201, true);
+    } catch (error) {
+        console.log(error);
+    }
+}
+
 module.exports = {
-  updateProfile,
-  getProfile,
-  toggleUserBlockedStatus,
+    updateProfile,
+    getProfile,
+    verifyEmail,
+    toggleUserBlockedStatus
 };

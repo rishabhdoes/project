@@ -13,7 +13,7 @@ exports.generateOTP = () => {
 
 exports.generateRandomString = () => {
   const length = 10;
-  const characters = "qwertyuiopasdfghjklzxcvbnm@#$%^&*()!1234567890";
+  const characters = "qwertyuiopasdfghjklzxcvbnm1234567890";
   let result = "";
 
   for (let i = 0; i < length; i++) {
