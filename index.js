@@ -8,7 +8,6 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 
 require("./middleware/passport-middleware");
-console.log(CLIENT_URL);
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({ origin: [CLIENT_URL, 'https://homewale.com'], credentials: true }));
