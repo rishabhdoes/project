@@ -5,7 +5,6 @@ exports.validationMiddleware = (req, res, next) => {
 
   if (!errors.isEmpty()) {
     const error = new Error(errors.errors[0].msg);
-    console.log("gg");
     error.statusCode = 400; // Set the status code for the error
     return next(error);
   }

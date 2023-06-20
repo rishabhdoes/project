@@ -6,7 +6,6 @@ const MAX_COUNT = 100;
 const getHouse = async (req, res) => {
   try {
     const { houseId } = req.query;
-    // console.log(houseId);
     const data = await db.query(
       `SELECT houses.*,
       houseFacilities.ac,
@@ -801,8 +800,6 @@ const listPropertiesOnSearch = async (req, res) => {
       available_date_greater_than += new Date() + 30 * 24 * 60 * 60 * 1000;
     }
 
-    console.log(text);
-
     const keywords = text.map((textArray) => {
       const op = textArray.split(",");
       return op;
@@ -1178,8 +1175,6 @@ const getPropertyData = async (req, res) => {
    FROM houses
    LEFT JOIN housefacilities
    on houses.id=housefacilities.house_id
-   LEFT JOIN propertymediatable 
-   ON houses.id = propertymediatable.house_id
    where houses.id=$1
 `;
     const { rows } = await db.query(query, [id]);
@@ -1423,6 +1418,7 @@ const deleteProperty = async (req, res, next) => {
     next(error);
   }
 };
+
 const logout = async (req, res) => {
   try {
     return res.status(200).cookie("token", "").json({

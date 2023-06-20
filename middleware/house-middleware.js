@@ -67,6 +67,7 @@ const housesValidation = async (req, res, next) => {
     address,
     houseNo,
     pincode,
+    discription,
     // part 3
     rent,
     rent_negotiable,
