@@ -1477,7 +1477,7 @@ const deleteProperty = async (req, res, next) => {
 };
 const logout = async (req, res) => {
   try {
-    return res.status(200).cookie("token", "").json({
+    return res.status(200).clearCookie("token").json({
       success: true,
       message: "Logged out successfully",
     });
