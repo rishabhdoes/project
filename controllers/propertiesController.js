@@ -40,7 +40,7 @@ const getHouse = async (req, res) => {
     );
 
     const { rows } = data;
-    // console.log(rows[0]);
+    // //.log(rows[0]);
     if (!rows.length) {
       throw new Error("House not found");
     } else {
@@ -66,7 +66,7 @@ const getPg = async (req, res) => {
     );
 
     const { rows } = data;
-    // console.log(rows[0]);
+    // //.log(rows[0]);
     if (!rows.length) {
       throw new Error("Pg not found");
     } else {
@@ -800,6 +800,8 @@ const listPropertiesOnSearch = async (req, res) => {
       available_date_greater_than += new Date() + 30 * 24 * 60 * 60 * 1000;
     }
 
+    console.log(text);
+
     const keywords = text.map((textArray) => {
       const op = textArray.split(",");
       return op;
@@ -926,7 +928,7 @@ const listPropertiesOnSearch = async (req, res) => {
       let housesData = mergedData;
       if (property_with_image) {
         housesData = mergedData.filter((data) => {
-          // console.log(data);
+          // //.log(data);
           return data.file_name.length > 0;
         });
       }
@@ -979,7 +981,7 @@ const listPropertiesOnSearch = async (req, res) => {
         .json({ allpgs: pgsData.rows, totalCount: pgsCount.rows[0] });
     }
   } catch (e) {
-    console.log(e);
+    //.log(e);
     res.status(400).json(e);
   }
 };
@@ -1213,62 +1215,123 @@ const getUser = async (req, res) => {
 
 const getOwnerDetails = async (req, res) => {
   try {
-    const { houseId } = req.params;
-    if (!houseId || !req.user) {
-      throw new Error("Invalid request");
-    }
-
-    const { rows, rowCount } = await db.query(
-      "SELECT * FROM houses WHERE id = $1",
-      [houseId]
-    );
-
-    if (rowCount <= 0) {
-      throw new Error("House does not exist");
-    } else {
-      const ownerId = rows[0].owner_id;
-
-      const data = await db.query(
-        "SELECT owners_contacted, count_owner_contacted, name, email, phone_number FROM users WHERE id = $1",
-        [ownerId]
+    const { houseId = null, pgId = null } = req.body;
+    if (houseId) {
+      const { rows, rowCount } = await db.query(
+        "SELECT * FROM houses WHERE id = $1",
+        [houseId]
       );
 
-      const userData = data.rows[0];
-      const {
-        name,
-        email,
-        phone_number,
-        count_owner_contacted,
-        owners_contacted,
-      } = userData;
-
-      // if user is himself the owner or
-      // he has already seen contacts for this property
-      // show owner details
-      if (ownerId === req.user.id || owners_contacted.includes(houseId)) {
-        return res
-          .status(200)
-          .json({ exists: true, name, email, phone_number });
+      if (rowCount <= 0) {
+        throw new Error("House does not exist");
       } else {
-        // if user currently has more limit to view owners
-        if (count_owner_contacted > 0) {
-          const ownerContacted = [...owners_contacted, houseId];
-          const countOwnerContacted = count_owner_contacted - 1;
+        const ownerId = rows[0].owner_id;
 
-          await db.query(
-            "UPDATE users SET owners_contacted = $1, count_owner_contacted = $2 WHERE id = $3",
-            [ownerContacted, countOwnerContacted, ownerId]
-          );
+        const data = await db.query(
+          "SELECT owners_contacted, count_owner_contacted, name, email, phone_number FROM users WHERE id = $1",
+          [req.user.id]
+        );
 
+        const userData = data.rows[0];
+
+        const {
+          name,
+          email,
+          phone_number,
+          count_owner_contacted,
+          owners_contacted,
+        } = userData;
+
+        //.log(userData);
+
+        // if user is himself the owner or
+        // he has already seen contacts for this property
+        // show owner details
+        if (
+          ownerId === req.user.id ||
+          owners_contacted?.includes("h_" + houseId)
+        ) {
           return res
             .status(200)
-            .json({ exists: true, name, phone_number, email });
+            .json({ exists: true, name, email, phone_number });
         } else {
-          // user has reached his max free limit
-          return res.status(200).json({
-            exists: false,
-            message: "You have used your free credits",
-          });
+          // if user currently has more limit to view owners
+          //.log(count_owner_contacted);
+          if (count_owner_contacted > 0) {
+            //.log("ser" + req.user.id);
+            const ownerContacted = [...owners_contacted, "h_" + houseId];
+            const countOwnerContacted = count_owner_contacted - 1;
+
+            await db.query(
+              "UPDATE users SET owners_contacted = $1, count_owner_contacted = $2 WHERE id = $3",
+              [ownerContacted, countOwnerContacted, req.user.id]
+            );
+
+            return res
+              .status(200)
+              .json({ exists: true, name, phone_number, email });
+          } else {
+            // user has reached his max free limit
+            return res.status(200).json({
+              exists: false,
+              message: "You have used your free credits",
+            });
+          }
+        }
+      }
+    } else {
+      const { rows, rowCount } = await db.query(
+        "SELECT * FROM pgs WHERE id = $1",
+        [pgId]
+      );
+
+      if (rowCount <= 0) {
+        throw new Error("Pg does not exist");
+      } else {
+        const ownerId = rows[0].owner_id;
+
+        const data = await db.query(
+          "SELECT owners_contacted, count_owner_contacted, name, email, phone_number FROM users WHERE id = $1",
+          [req.user.id]
+        );
+
+        const userData = data.rows[0];
+        const {
+          name,
+          email,
+          phone_number,
+          count_owner_contacted,
+          owners_contacted,
+        } = userData;
+
+        // if user is himself the owner or
+        // he has already seen contacts for this property
+        // show owner details
+        if (ownerId === req.user.id || owners_contacted.includes("p_" + pgId)) {
+          return res
+            .status(200)
+            .json({ exists: true, name, email, phone_number });
+        } else {
+          // if user currently has more limit to view owners
+          if (count_owner_contacted > 0) {
+            const ownerContacted = [...owners_contacted, "p_" + pgId];
+            const countOwnerContacted = count_owner_contacted - 1;
+
+            await db.query(
+              "UPDATE users SET owners_contacted = $1, count_owner_contacted = $2 WHERE id = $3",
+              [ownerContacted, countOwnerContacted, req.user.id]
+            );
+
+            return res
+              .status(200)
+              .json({ exists: true, name, phone_number, email });
+          } else {
+            // user has reached his max free limit
+            return res.status(200).json({
+              exists: false,
+              message: "You have used your free credits",
+            });
+          }
         }
       }
     }
@@ -1421,12 +1484,49 @@ const deleteProperty = async (req, res, next) => {
 
 const logout = async (req, res) => {
   try {
-    return res.status(200).cookie("token", "").json({
+    return res.status(200).clearCookie("token").json({
       success: true,
       message: "Logged out successfully",
     });
   } catch (err) {
     res.status(400).json(err);
+  }
+};
+
+const getAllPropertiesContacted = async (req, res, next) => {
+  try {
+    const query = `SELECT owners_contacted FROM users WHERE id=$1`;
+    const { id: userId } = req.user;
+
+    const { rows } = await db.query(query, [userId]);
+
+    const propertyIds = rows[0].owners_contacted;
+
+    //.log(propertyIds);
+
+    const propertyData = await Promise.all(
+      propertyIds.map(async (id) => {
+        if (id && id[0] === "h") {
+          id = id.slice(2);
+          const query = `SELECT * FROM houses where id=$1`;
+          const data = db.query(query, [id]);
+          //.log(data);
+          return data;
+        } else {
+          id = id.slice(2);
+          const query = `SELECT * FROM pgs where id=$1`;
+          const data = db.query(query, [id]);
+          //.log(data);
+          return data;
+        }
+      })
+    );
+
+    const data = propertyData.map((p) => p.rows).flat();
+
+    res.status(200).json(data);
+  } catch (err) {
+    next(err);
   }
 };
 
@@ -1447,4 +1547,5 @@ module.exports = {
   getPg,
   getAdminPropertyList,
   deleteProperty,
+  getAllPropertiesContacted,
 };

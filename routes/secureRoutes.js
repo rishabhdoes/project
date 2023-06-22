@@ -27,8 +27,9 @@ const {
   getOwnerDetails,
   getPg,
   logout,
+  getAllPropertiesContacted,
 } = require("../controllers/propertiesController");
-const { updateProfile } = require("../controllers/profileController");
+const { updateProfile, verifyEmail, generateVerificationEmail} = require("../controllers/profileController");
 
 const {
   handleHouseImageUpload,
@@ -76,6 +77,8 @@ router.get("/user/me", getUser);
 
 router.get("/user/mylistings", getMyListings);
 
+router.get("/user/getAllPropertiesContacted", getAllPropertiesContacted);
+
 // shortlist properties
 router.post("/user/property/shortlist", checkUserVerified, shortlistProperty);
 router.get("/user/myshortlists", checkUserVerified, showShortlists);
@@ -101,11 +104,11 @@ router.delete(
 );
 // profile
 router.post("/updateProfile", updateProfile);
-
+router.post('/generateVerificationEmail', generateVerificationEmail);
 // owner details
 router.get(
   "/user/listings/get-owner-details/:houseId",
-  checkUserVerified,
+  // checkUserVerified,
   getOwnerDetails
 );
 router.get("/logout", logout);
