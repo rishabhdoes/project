@@ -224,6 +224,7 @@ module.exports = {
   emailValidation: [email, getUserFromEmail],
   tokenValidation: [password, getUserFromId],
   housesValidation,
+  emailExists
 };
 
 

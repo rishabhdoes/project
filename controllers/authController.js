@@ -168,6 +168,7 @@ const resetPassword = async (req, res) => {
   try {
     const password_hash = await hash(newPassword, 10);
     const secret = JWT_SECRET;
+    const verify = jwt.verify(token, secret);
 
     await db.query(`UPDATE users SET password_hash=$1 WHERE id=$2`, [
       password_hash,

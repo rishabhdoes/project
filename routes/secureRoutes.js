@@ -28,7 +28,7 @@ const {
   getPg,
   logout,
 } = require("../controllers/propertiesController");
-const { updateProfile, verifyEmail } = require("../controllers/profileController");
+const { updateProfile, verifyEmail, generateVerificationEmail} = require("../controllers/profileController");
 
 const {
   handleHouseImageUpload,
@@ -101,8 +101,7 @@ router.delete(
 );
 // profile
 router.post("/updateProfile", updateProfile);
-router.post("/verifyEmail", verifyEmail);
-
+router.post('/generateVerificationEmail', generateVerificationEmail);
 // owner details
 router.get(
   "/user/listings/get-owner-details/:houseId",

@@ -64,18 +64,17 @@ const toggleUserBlockedStatus = async (req, res, next) => {
 };
 
 
-const verifyEmail = async(req, res) => {
+const generateVerificationEmail = async(req, res) => {
     const user = req.user;
 
     const id = user?.id;
     const { email } = req.body;
-    console.log("email:", email)
 
     const randomString = generateRandomString();
     const token =
         jwt.sign({ email: email }, JWT_SECRET, { expiresIn: "15m" }) + randomString;
     const baseUrl = process.env.CLIENT_URL;
-    const link = `${baseUrl}/resetpassword/${id}/${token}`;
+    const link = `${baseUrl}/verifyEmail/${id}/${email}/${token}`;
 
     try {
         await mailTransport().sendMail({
@@ -89,10 +88,32 @@ const verifyEmail = async(req, res) => {
         console.log(error);
     }
 }
+const verifyEmail = async(req, res) => {
+  let { user_id,email, token } = req.params;
+
+  token = token.slice(0, -10);
+
+  try {
+    const secret = JWT_SECRET;
+    const verify = jwt.verify(token, secret);
+
+    const {rows} = await db.query(`UPDATE users SET verified=$1, email=$2 WHERE id=$3 returning *`, [
+      true,
+      email,
+      user_id,
+    ]);
+    return sendMsg(res, 200, true, "Password Changed");
+  } catch (error) {
+    console.log(error);
+    sendMsg(res, 400, true, "Link expired");
+    // return res.status(400).send("Link Expired");
+  }
+}
 
 module.exports = {
     updateProfile,
     getProfile,
+    toggleUserBlockedStatus,
     verifyEmail,
-    toggleUserBlockedStatus
+    generateVerificationEmail
 };
