@@ -29,7 +29,11 @@ const {
   logout,
   getAllPropertiesContacted,
 } = require("../controllers/propertiesController");
-const { updateProfile, verifyEmail, generateVerificationEmail} = require("../controllers/profileController");
+const {
+  updateProfile,
+  verifyEmail,
+  generateVerificationEmail,
+} = require("../controllers/profileController");
 
 const {
   handleHouseImageUpload,
@@ -104,15 +108,14 @@ router.delete(
 );
 // profile
 router.post("/updateProfile", updateProfile);
-router.post('/generateVerificationEmail', generateVerificationEmail);
+router.post("/generateVerificationEmail", generateVerificationEmail);
 // owner details
-router.get(
-  "/user/listings/get-owner-details/:houseId",
-  // checkUserVerified,
+router.post(
+  "/user/listings/get-owner-details",
+  checkUserVerified,
   getOwnerDetails
 );
-router.get("/logout", logout);
 
-//
+router.get("/logout", logout);
 
 module.exports = router;
