@@ -222,7 +222,7 @@ module.exports = {
   loginValidation: [email, loginFieldsCheck],
 
   emailValidation: [email, getUserFromEmail],
-  tokenValidation: [password, getUserFromId],
+  tokenValidation: [newPassword, getUserFromId],
   housesValidation,
   emailExists
 };
