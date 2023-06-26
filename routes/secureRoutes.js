@@ -78,9 +78,7 @@ router.post(
 
 // fetch all user listings
 router.get("/user/me", getUser);
-
 router.get("/user/mylistings", getMyListings);
-
 router.get("/user/getAllPropertiesContacted", getAllPropertiesContacted);
 
 // shortlist properties

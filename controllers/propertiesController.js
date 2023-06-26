@@ -1122,7 +1122,7 @@ const showShortlists = async (req, res) => {
           );
 
           const data = await db.query(
-            "SELECT * FROM propertymediatable WHERE house_id = $1",
+            "SELECT filename, id, media_url FROM propertymediatable WHERE house_id = $1",
             [shortlistId]
           );
 
