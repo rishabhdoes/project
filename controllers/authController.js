@@ -51,6 +51,7 @@ const register = async (req, res) => {
     return res.status(200).json({
       success: true,
       token: token,
+      user,
     });
   } catch (err) {
     res.status(400).json({
@@ -116,6 +117,7 @@ const verify = async (req, res) => {
       success: true,
       token: token,
       message: "Logged in successfully",
+      user,
     });
   } catch (error) {
     res.status(400).json({
