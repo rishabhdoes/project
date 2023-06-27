@@ -42,7 +42,12 @@ const register = async (req, res) => {
       html: `<h1>${OTP}</h1>`,
     });
 
-    return res.status(200).json({ user, success: true });
+    // return res.status(200).json({ user, success: true });
+    return res.status(200).json({
+      success: true,
+      token: token,
+      user,
+    });
     // return sendMsg(res, 201, true, { user });
   } catch (err) {
     res.status(400).json({
@@ -100,8 +105,13 @@ const verify = async (req, res) => {
 
     token = sign(payload, JWT_SECRET, { expiresIn: "365d" });
 
-    return res.status(200).cookie("token", token, { httpOnly: true }).json({
+    // return res.status(200).cookie("token", token, { httpOnly: true }).json({
+    //   success: true,
+    //   message: "Logged in successfully",
+    // });
+    return res.status(200).json({
       success: true,
+      token: token,
       message: "Logged in successfully",
     });
   } catch (error) {
@@ -122,8 +132,14 @@ const login = async (req, res) => {
 
     const token = sign(payload, JWT_SECRET, { expiresIn: "365d" });
 
-    return res.status(200).cookie("token", token, { httpOnly: true }).json({
+    // return res.status(200).cookie("token", token, { httpOnly: true }).json({
+    //   success: true,
+    //   message: "Logged in successfully",
+    //   user: user,
+    // });
+    return res.status(200).json({
       success: true,
+      token: token,
       message: "Logged in successfully",
       user: user,
     });
