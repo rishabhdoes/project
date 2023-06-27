@@ -1,4 +1,4 @@
-const { JWT_SECRET } = require("../config");
+const { JWT_SECRET, SENDER_EMAIL } = require("../config");
 const db = require("../db");
 const { sign } = require("jsonwebtoken");
 const { hash, compare } = require("bcryptjs");
@@ -36,14 +36,23 @@ const register = async (req, res) => {
     );
 
     mailTransport().sendMail({
-      from: "yesbroker@gmail.com",
+      from: SENDER_EMAIL,
       to: email,
       subject: "Verify your email account",
       html: `<h1>${OTP}</h1>`,
     });
 
-    return res.status(200).json({ user, success: true });
-    // return sendMsg(res, 201, true, { user });
+    let payload = {
+      ...user,
+    };
+
+    let token = sign(payload, JWT_SECRET, { expiresIn: "365d" });
+
+    return res.status(200).json({
+      success: true,
+      token: token,
+      user,
+    });
   } catch (err) {
     res.status(400).json({
       message: err.toString(),
@@ -100,9 +109,15 @@ const verify = async (req, res) => {
 
     token = sign(payload, JWT_SECRET, { expiresIn: "365d" });
 
-    return res.status(200).cookie("token", token, { httpOnly: true }).json({
+    // return res.status(200).cookie("token", token, { httpOnly: true }).json({
+    //   success: true,
+    //   message: "Logged in successfully",
+    // });
+    return res.status(200).json({
       success: true,
+      token: token,
       message: "Logged in successfully",
+      user,
     });
   } catch (error) {
     res.status(400).json({
@@ -122,8 +137,14 @@ const login = async (req, res) => {
 
     const token = sign(payload, JWT_SECRET, { expiresIn: "365d" });
 
-    return res.status(200).cookie("token", token, { httpOnly: true }).json({
+    // return res.status(200).cookie("token", token, { httpOnly: true }).json({
+    //   success: true,
+    //   message: "Logged in successfully",
+    //   user: user,
+    // });
+    return res.status(200).json({
       success: true,
+      token: token,
       message: "Logged in successfully",
       user: user,
     });
@@ -150,7 +171,7 @@ const forgotPassword = async (req, res) => {
 
   try {
     mailTransport().sendMail({
-      from: "yesbroker@gmail.com",
+      from: SENDER_EMAIL,
       to: email,
       subject: "Change your password",
       html: `<a href="${link}">Click here to reset password</a>`,
@@ -168,6 +189,7 @@ const resetPassword = async (req, res) => {
   try {
     const password_hash = await hash(newPassword, 10);
     const secret = JWT_SECRET;
+    const verify = jwt.verify(token, secret);
 
     await db.query(`UPDATE users SET password_hash=$1 WHERE id=$2`, [
       password_hash,

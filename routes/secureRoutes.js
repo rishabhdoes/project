@@ -29,7 +29,11 @@ const {
   logout,
   getAllPropertiesContacted,
 } = require("../controllers/propertiesController");
-const { updateProfile } = require("../controllers/profileController");
+const {
+  updateProfile,
+  verifyEmail,
+  generateVerificationEmail,
+} = require("../controllers/profileController");
 
 const {
   handleHouseImageUpload,
@@ -74,9 +78,7 @@ router.post(
 
 // fetch all user listings
 router.get("/user/me", getUser);
-
 router.get("/user/mylistings", getMyListings);
-
 router.get("/user/getAllPropertiesContacted", getAllPropertiesContacted);
 
 // shortlist properties
@@ -104,15 +106,14 @@ router.delete(
 );
 // profile
 router.post("/updateProfile", updateProfile);
-
+router.post("/generateVerificationEmail", generateVerificationEmail);
 // owner details
-router.get(
-  "/user/listings/get-owner-details/:houseId",
+router.post(
+  "/user/listings/get-owner-details",
   checkUserVerified,
   getOwnerDetails
 );
-router.get("/logout", logout);
 
-//
+router.get("/logout", logout);
 
 module.exports = router;

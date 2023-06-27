@@ -4,6 +4,7 @@ const {
   loginValidation,
   emailValidation,
   tokenValidation,
+  emailExists,
 } = require("../validators/auth");
 
 const { validationMiddleware } = require("../middleware/validation-middleware");
@@ -24,6 +25,7 @@ const {
   listPropertiesOnSearch,
   getPropertyData,
 } = require("../controllers/propertiesController");
+const { verifyEmail } = require("../controllers/profileController");
 
 const router = Router();
 
@@ -53,4 +55,5 @@ router.get("/nearbyLocalities", nearbyLocalities);
 
 router.get("/getProperty/:id", getPropertyData);
 
+router.get(`/verifyEmail/:user_id/:email/:token`, emailExists, verifyEmail);
 module.exports = router;

@@ -6,7 +6,6 @@ const MAX_COUNT = 100;
 const getHouse = async (req, res) => {
   try {
     const { houseId } = req.query;
-    // //.log(houseId);
     const data = await db.query(
       `SELECT houses.*,
       houseFacilities.ac,
@@ -173,6 +172,9 @@ const updateHouseProperty = async (req, res) => {
       property_type = null,
       water_supply = null,
       rank = null,
+      houseNo = null,
+      pincode = null,
+      address = null,
     } = req.body;
 
     const houseObj = {
@@ -211,6 +213,9 @@ const updateHouseProperty = async (req, res) => {
       property_type,
       rank,
       parking,
+      houseNo,
+      pincode,
+      address,
     };
 
     // default array that contains all columns that exist in houses db
@@ -252,6 +257,9 @@ const updateHouseProperty = async (req, res) => {
       "available_from",
       "parking",
       "rank",
+      "houseNo",
+      "pincode",
+      "address",
     ];
 
     // check whether values are null or not
@@ -744,9 +752,11 @@ const getMyListings = async (req, res) => {
       );
     } else {
       listings = await db.query(
-        "SELECT houses.id AS houses_id,* ,houseFacilities.id AS facilities_id  FROM houses LEFT JOIN houseFacilities ON houses.id = houseFacilities.house_id WHERE houses.owner_id = $1",
+        "SELECT *  FROM houses WHERE houses.owner_id = $1",
         [userId]
       );
+
+      listings.rows.map((house) => {});
     }
     res.status(200).json({ listings: listings.rows });
   } catch (err) {
@@ -791,8 +801,6 @@ const listPropertiesOnSearch = async (req, res) => {
     } else if (available_from === "after 30 days") {
       available_date_greater_than += new Date() + 30 * 24 * 60 * 60 * 1000;
     }
-
-    //.log(text);
 
     const keywords = text.map((textArray) => {
       const op = textArray.split(",");
@@ -1127,7 +1135,7 @@ const showShortlists = async (req, res) => {
           );
 
           const data = await db.query(
-            "SELECT * FROM propertymediatable WHERE house_id = $1",
+            "SELECT filename, id, media_url FROM propertymediatable WHERE house_id = $1",
             [shortlistId]
           );
 
@@ -1182,8 +1190,6 @@ const getPropertyData = async (req, res) => {
    FROM houses
    LEFT JOIN housefacilities
    on houses.id=housefacilities.house_id
-   LEFT JOIN propertymediatable 
-   ON houses.id = propertymediatable.house_id
    where houses.id=$1
 `;
     const { rows } = await db.query(query, [id]);
@@ -1236,7 +1242,7 @@ const getOwnerDetails = async (req, res) => {
 
         const data = await db.query(
           "SELECT owners_contacted, count_owner_contacted, name, email, phone_number FROM users WHERE id = $1",
-          [req.user.id]
+          [ownerId]
         );
 
         const userData = data.rows[0];
@@ -1299,10 +1305,11 @@ const getOwnerDetails = async (req, res) => {
 
         const data = await db.query(
           "SELECT owners_contacted, count_owner_contacted, name, email, phone_number FROM users WHERE id = $1",
-          [req.user.id]
+          [ownerId]
         );
 
         const userData = data.rows[0];
+
         const {
           name,
           email,
@@ -1488,6 +1495,7 @@ const deleteProperty = async (req, res, next) => {
     next(error);
   }
 };
+
 const logout = async (req, res) => {
   try {
     return res.status(200).clearCookie("token").json({

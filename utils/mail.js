@@ -1,4 +1,4 @@
-const { MAILTRAP_USERNAME, MAILTRAP_PASSWORD } = require("../config");
+const { SENDER_EMAIL, SENDER_PASSWORD } = require("../config");
 const nodemailer = require("nodemailer");
 
 exports.generateOTP = () => {
@@ -13,7 +13,7 @@ exports.generateOTP = () => {
 
 exports.generateRandomString = () => {
   const length = 10;
-  const characters = "qwertyuiopasdfghjklzxcvbnm@#$%^&*()!1234567890";
+  const characters = "qwertyuiopasdfghjklzxcvbnm1234567890";
   let result = "";
 
   for (let i = 0; i < length; i++) {
@@ -25,12 +25,12 @@ exports.generateRandomString = () => {
 };
 
 exports.mailTransport = () => {
-  var transport = nodemailer.createTransport({
-    host: "sandbox.smtp.mailtrap.io",
-    port: 2525,
+  let transport = nodemailer.createTransport({
+    host: "smtp.hostinger.com",
+    port: 465,
     auth: {
-      user: MAILTRAP_USERNAME,
-      pass: MAILTRAP_PASSWORD,
+      user: SENDER_EMAIL,
+      pass: SENDER_PASSWORD,
     },
   });
 
