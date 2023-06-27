@@ -42,13 +42,16 @@ const register = async (req, res) => {
       html: `<h1>${OTP}</h1>`,
     });
 
-    // return res.status(200).json({ user, success: true });
+    let payload = {
+      ...verifiedUser,
+    };
+
+    let token = sign(payload, JWT_SECRET, { expiresIn: "365d" });
+
     return res.status(200).json({
       success: true,
       token: token,
-      user,
     });
-    // return sendMsg(res, 201, true, { user });
   } catch (err) {
     res.status(400).json({
       message: err.toString(),

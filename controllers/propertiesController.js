@@ -752,9 +752,11 @@ const getMyListings = async (req, res) => {
       );
     } else {
       listings = await db.query(
-        "SELECT houses.id AS houses_id,* ,houseFacilities.id AS facilities_id  FROM houses LEFT JOIN houseFacilities ON houses.id = houseFacilities.house_id WHERE houses.owner_id = $1",
+        "SELECT *  FROM houses WHERE houses.owner_id = $1",
         [userId]
       );
+
+      listings.rows.map((house) => {});
     }
     res.status(200).json({ listings: listings.rows });
   } catch (err) {
@@ -1120,7 +1122,7 @@ const showShortlists = async (req, res) => {
           );
 
           const data = await db.query(
-            "SELECT * FROM propertymediatable WHERE house_id = $1",
+            "SELECT filename, id, media_url FROM propertymediatable WHERE house_id = $1",
             [shortlistId]
           );
 
@@ -1227,7 +1229,7 @@ const getOwnerDetails = async (req, res) => {
 
         const data = await db.query(
           "SELECT owners_contacted, count_owner_contacted, name, email, phone_number FROM users WHERE id = $1",
-          [req.user.id]
+          [ownerId]
         );
 
         const userData = data.rows[0];
@@ -1290,10 +1292,11 @@ const getOwnerDetails = async (req, res) => {
 
         const data = await db.query(
           "SELECT owners_contacted, count_owner_contacted, name, email, phone_number FROM users WHERE id = $1",
-          [req.user.id]
+          [ownerId]
         );
 
         const userData = data.rows[0];
+
         const {
           name,
           email,
