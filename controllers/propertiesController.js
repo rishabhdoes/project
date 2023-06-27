@@ -745,6 +745,7 @@ const getMyListings = async (req, res) => {
     const { propertyType } = req.query;
 
     let listings;
+
     if (propertyType === "pgs") {
       listings = await db.query(
         "SELECT * FROM pgs LEFT OUTER JOIN pgfacilities ON pgs.id = pgfacilities.pg_id WHERE pgs.owner_id = $1",
@@ -752,13 +753,27 @@ const getMyListings = async (req, res) => {
       );
     } else {
       listings = await db.query(
-        "SELECT *  FROM houses WHERE houses.owner_id = $1",
+        "SELECT * FROM houses WHERE houses.owner_id = $1",
         [userId]
       );
 
-      listings.rows.map((house) => {});
+      let listingsWithImages = await Promise.all(
+        listings.rows.map(async (house) => {
+          const fetchData = async () => {
+            const { rows } = await db.query(
+              "SELECT media_url, id FROM propertyMediaTable WHERE house_id = $1",
+              [house.id]
+            );
+            return rows;
+          };
+
+          let newData = { ...house, images: await fetchData() };
+          return newData;
+        })
+      );
+
+      res.status(200).json({ listings: listingsWithImages });
     }
-    res.status(200).json({ listings: listings.rows });
   } catch (err) {
     res.status(400).json({
       message: err.toString(),
