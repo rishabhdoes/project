@@ -108,7 +108,7 @@ router.post("/updateProfile", updateProfile);
 // owner details
 router.get(
   "/user/listings/get-owner-details/:houseId",
-  // checkUserVerified,
+  checkUserVerified,
   getOwnerDetails
 );
 router.get("/logout", logout);
