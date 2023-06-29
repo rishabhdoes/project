@@ -1254,34 +1254,37 @@ const getOwnerDetails = async (req, res) => {
         throw new Error("House does not exist");
       } else {
         const ownerId = rows[0].owner_id;
+        const userId = req.user.id;
 
-        const data = await db.query(
-          "SELECT owners_contacted, count_owner_contacted, name, email, phone_number FROM users WHERE id = $1",
-          [ownerId]
+        // user Data
+        let userData = await db.query(
+          "SELECT owners_contacted, count_owner_contacted FROM users WHERE id = $1",
+          [userId]
         );
 
-        const userData = data.rows[0];
+        userData = userData.rows[0];
 
-        const {
-          name,
-          email,
-          phone_number,
-          count_owner_contacted,
-          owners_contacted,
-        } = userData;
+        const { count_owner_contacted, owners_contacted } = userData;
 
-        //.log(userData);
+        let ownerData = await db.query(
+          "SELECT name, email, phone_number FROM users WHERE id = $1",
+          [ownerId]
+        );
+        ownerData = ownerData.rows[0];
+
+        // console.log(userData, ownerData);
 
         // if user is himself the owner or
         // he has already seen contacts for this property
         // show owner details
+        // console.log("owners_contacted: ", owners_contacted);
+        // console.log("h_" + houseId);
+
         if (
           ownerId === req.user.id ||
           owners_contacted?.includes("h_" + houseId)
         ) {
-          return res
-            .status(200)
-            .json({ exists: true, name, email, phone_number });
+          return res.status(200).json({ exists: true, ...ownerData });
         } else {
           // if user currently has more limit to view owners
           //.log(count_owner_contacted);
@@ -1290,14 +1293,15 @@ const getOwnerDetails = async (req, res) => {
             const ownerContacted = [...owners_contacted, "h_" + houseId];
             const countOwnerContacted = count_owner_contacted - 1;
 
+            // console.log("owners_contacted: ", owners_contacted);
+            // console.log("new_owners_contacted: ", ownerContacted);
+
             await db.query(
               "UPDATE users SET owners_contacted = $1, count_owner_contacted = $2 WHERE id = $3",
               [ownerContacted, countOwnerContacted, req.user.id]
             );
 
-            return res
-              .status(200)
-              .json({ exists: true, name, phone_number, email });
+            return res.status(200).json({ exists: true, ...ownerData });
           } else {
             // user has reached his max free limit
             return res.status(200).json({
@@ -1531,29 +1535,32 @@ const getAllPropertiesContacted = async (req, res, next) => {
 
     const propertyIds = rows[0].owners_contacted;
 
-    console.log(propertyIds);
-
     const propertyData = await Promise.all(
       propertyIds.map(async (id) => {
         if (id && id[0] === "h") {
           id = id.slice(2);
           const query = `SELECT * FROM houses where id=$1`;
-          const data = db.query(query, [id]);
-          //.log(data);
-          return data;
+          const data = await db.query(query, [id]);
+          const imageData = await db.query(
+            "SELECT media_url, filename FROM propertyMediaTable WHERE house_id = $1",
+            [id]
+          );
+          return { ...data.rows[0], images: imageData.rows };
         } else {
           id = id.slice(2);
           const query = `SELECT * FROM pgs where id=$1`;
-          const data = db.query(query, [id]);
+          const data = await db.query(query, [id]);
+          const imageData = await db.query(
+            "SELECT media_url, filename FROM propertyMediaTable WHERE pg_id = $1",
+            [id]
+          );
           //.log(data);
-          return data;
+          return { ...data.rows[0], images: imageData.rows };
         }
       })
     );
 
-    const data = propertyData.map((p) => p.rows).flat();
-
-    res.status(200).json(data);
+    res.status(200).json(propertyData);
   } catch (err) {
     next(err);
   }
