@@ -43,7 +43,7 @@ const register = async (req, res) => {
     });
 
     let payload = {
-      ...verifiedUser,
+      ...user,
     };
 
     let token = sign(payload, JWT_SECRET, { expiresIn: "365d" });

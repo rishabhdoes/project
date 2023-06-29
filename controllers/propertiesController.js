@@ -1518,7 +1518,7 @@ const getAllPropertiesContacted = async (req, res, next) => {
 
     const propertyIds = rows[0].owners_contacted;
 
-    //.log(propertyIds);
+    console.log(propertyIds);
 
     const propertyData = await Promise.all(
       propertyIds.map(async (id) => {
