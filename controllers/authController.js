@@ -51,6 +51,7 @@ const register = async (req, res) => {
     return res.status(200).json({
       success: true,
       token: token,
+      user,
     });
   } catch (err) {
     res.status(400).json({
@@ -108,10 +109,15 @@ const verify = async (req, res) => {
 
     token = sign(payload, JWT_SECRET, { expiresIn: "365d" });
 
+    // return res.status(200).cookie("token", token, { httpOnly: true }).json({
+    //   success: true,
+    //   message: "Logged in successfully",
+    // });
     return res.status(200).json({
       success: true,
       token: token,
       message: "Logged in successfully",
+      user,
     });
   } catch (error) {
     res.status(400).json({
@@ -131,6 +137,11 @@ const login = async (req, res) => {
 
     const token = sign(payload, JWT_SECRET, { expiresIn: "365d" });
 
+    // return res.status(200).cookie("token", token, { httpOnly: true }).json({
+    //   success: true,
+    //   message: "Logged in successfully",
+    //   user: user,
+    // });
     return res.status(200).json({
       success: true,
       token: token,

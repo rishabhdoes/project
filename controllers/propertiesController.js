@@ -927,23 +927,36 @@ const listPropertiesOnSearch = async (req, res) => {
       GROUP BY house_id;
     `;
 
-      const mediaData = await db.query(queryForMedia, [houseIds]);
+      let mediaData = await db.query(queryForMedia, [houseIds]);
+
+      const newMedia = mediaData.rows.map((mp) => {
+        const mediaFiles = [];
+
+        for (let i = 0; i < mp.file_name.length; i++) {
+          mediaFiles.push({
+            file_name: mp.file_name[i],
+            media_url: mp.media_url[i],
+          });
+        }
+
+        return { house_id: mp.house_id, images: mediaFiles };
+      });
+
+      //console.log(newMedia);
 
       const mergedData = houseData.rows.map((house) => {
-        const media = mediaData.rows.find(
-          (media) => media.house_id === house.houses_id
+        const media = newMedia.find(
+          (item) => item.house_id === house.houses_id
         );
         return {
           ...house,
-          file_name: media ? media.file_name : [],
-          media_url: media ? media.media_url : [],
+          ...media,
         };
       });
 
       let housesData = mergedData;
       if (property_with_image) {
         housesData = mergedData.filter((data) => {
-          // //.log(data);
           return data.file_name.length > 0;
         });
       }
