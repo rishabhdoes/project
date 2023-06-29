@@ -106,11 +106,11 @@ const housesValidation = async (req, res, next) => {
         throw new Error("Invalid BuiltType Area");
       }
 
-      if (!floor || floor < 0) {
+      if (!floor) {
         throw new Error("Invalid Floor");
       }
 
-      if (!total_floors || total_floors < 0 || total_floors < floor) {
+      if (!total_floors) {
         throw new Error("Invalid Floor");
       }
 
