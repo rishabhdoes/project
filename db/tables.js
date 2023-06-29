@@ -13,7 +13,7 @@ const queries = {
         count_property_listed NUMERIC DEFAULT 0 CHECK (count_property_listed >= 0),
         forgot_password_hash VARCHAR (255),
         count_shortlists NUMERIC DEFAULT 0 CHECK (count_shortlists >= 0), 
-        count_owner_contacted NUMERIC DEFAULT 0,
+        count_owner_contacted NUMERIC DEFAULT 10,
         is_blocked BOOLEAN DEFAULT FALSE,
         owners_contacted VARCHAR[] DEFAULT '{}'::VARCHAR[],
         created_at timestamp DEFAULT CURRENT_TIMESTAMP,
