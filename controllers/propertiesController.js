@@ -745,6 +745,7 @@ const getMyListings = async (req, res) => {
     const { propertyType } = req.query;
 
     let listings;
+
     if (propertyType === "pgs") {
       listings = await db.query(
         "SELECT * FROM pgs LEFT OUTER JOIN pgfacilities ON pgs.id = pgfacilities.pg_id WHERE pgs.owner_id = $1",
@@ -752,13 +753,27 @@ const getMyListings = async (req, res) => {
       );
     } else {
       listings = await db.query(
-        "SELECT *  FROM houses WHERE houses.owner_id = $1",
+        "SELECT * FROM houses WHERE houses.owner_id = $1",
         [userId]
       );
 
-      listings.rows.map((house) => {});
+      let listingsWithImages = await Promise.all(
+        listings.rows.map(async (house) => {
+          const fetchData = async () => {
+            const { rows } = await db.query(
+              "SELECT media_url, id FROM propertyMediaTable WHERE house_id = $1",
+              [house.id]
+            );
+            return rows;
+          };
+
+          let newData = { ...house, images: await fetchData() };
+          return newData;
+        })
+      );
+
+      res.status(200).json({ listings: listingsWithImages });
     }
-    res.status(200).json({ listings: listings.rows });
   } catch (err) {
     res.status(400).json({
       message: err.toString(),
@@ -784,8 +799,7 @@ const listPropertiesOnSearch = async (req, res) => {
       facing = undefined,
       available_from = undefined,
       furnishing_type = undefined,
-      four_wheeler_parking = undefined,
-      two_wheeler_parking = undefined,
+      parking = undefined,
       property_with_image = undefined,
       property_type = undefined,
     } = filters || {};
@@ -827,9 +841,8 @@ const listPropertiesOnSearch = async (req, res) => {
       AND (available_from <= $8 OR $8 IS NULL)
       AND (available_from >= $9 OR $9 IS NULL)
       AND (furnishing_type = ANY ($10) OR $10 IS NULL)
-      AND (four_wheeler_parking = $11 OR $11 IS NULL)
-      AND (two_wheeler_parking = $12 OR $12 IS NULL)
-      AND (property_type = $13 OR $13 IS NULL)
+      AND (parking = ANY ($11) OR $11 IS NULL)
+      AND (property_type = $12 OR $12 IS NULL)
     ORDER BY (
       SELECT COUNT(DISTINCT word)
       FROM regexp_split_to_table(locality, E'\\s+') AS word
@@ -838,8 +851,8 @@ const listPropertiesOnSearch = async (req, res) => {
         FROM unnest($1::text[]) AS pattern
       )
     ) DESC, houses.updated_at DESC
-    OFFSET $14
-    LIMIT $15;
+    OFFSET $13
+    LIMIT $14;
   `;
 
     if (propertyType == "House" || propertyType == "house") {
@@ -854,8 +867,7 @@ const listPropertiesOnSearch = async (req, res) => {
         available_date_less_than,
         available_date_greater_than,
         furnishing_type,
-        four_wheeler_parking,
-        two_wheeler_parking,
+        parking,
         property_type,
         10 * (pgNo - 1),
         10,
@@ -882,10 +894,9 @@ const listPropertiesOnSearch = async (req, res) => {
         AND (available_from <= $8 OR $8 IS NULL)
         AND (available_from >= $9 OR $9 IS NULL)
         AND (furnishing_type = ANY ($10) OR $10 IS NULL)
-        AND (four_wheeler_parking = $11 OR $11 IS NULL)
-        AND (two_wheeler_parking = $12 OR $12 IS NULL)
-        AND (property_type = $13 OR $13 IS NULL)
-        AND(media_count>=$14 OR $14 IS NULL)
+        AND (parking = ANY ($11) OR $11 IS NULL)
+        AND (property_type = $12 OR $12 IS NULL)
+        AND(media_count>=$13 OR $13 IS NULL)
           `;
 
       const totalCount = await db.query(queryForhouseCount, [
@@ -899,8 +910,7 @@ const listPropertiesOnSearch = async (req, res) => {
         available_date_less_than,
         available_date_greater_than,
         furnishing_type,
-        four_wheeler_parking,
-        two_wheeler_parking,
+        parking,
         property_type,
         property_with_image,
       ]);
@@ -1239,34 +1249,37 @@ const getOwnerDetails = async (req, res) => {
         throw new Error("House does not exist");
       } else {
         const ownerId = rows[0].owner_id;
+        const userId = req.user.id;
 
-        const data = await db.query(
-          "SELECT owners_contacted, count_owner_contacted, name, email, phone_number FROM users WHERE id = $1",
-          [ownerId]
+        // user Data
+        let userData = await db.query(
+          "SELECT owners_contacted, count_owner_contacted FROM users WHERE id = $1",
+          [userId]
         );
 
-        const userData = data.rows[0];
+        userData = userData.rows[0];
 
-        const {
-          name,
-          email,
-          phone_number,
-          count_owner_contacted,
-          owners_contacted,
-        } = userData;
+        const { count_owner_contacted, owners_contacted } = userData;
 
-        //.log(userData);
+        let ownerData = await db.query(
+          "SELECT name, email, phone_number FROM users WHERE id = $1",
+          [ownerId]
+        );
+        ownerData = ownerData.rows[0];
+
+        // console.log(userData, ownerData);
 
         // if user is himself the owner or
         // he has already seen contacts for this property
         // show owner details
+        // console.log("owners_contacted: ", owners_contacted);
+        // console.log("h_" + houseId);
+
         if (
           ownerId === req.user.id ||
           owners_contacted?.includes("h_" + houseId)
         ) {
-          return res
-            .status(200)
-            .json({ exists: true, name, email, phone_number });
+          return res.status(200).json({ exists: true, ...ownerData });
         } else {
           // if user currently has more limit to view owners
           //.log(count_owner_contacted);
@@ -1275,14 +1288,15 @@ const getOwnerDetails = async (req, res) => {
             const ownerContacted = [...owners_contacted, "h_" + houseId];
             const countOwnerContacted = count_owner_contacted - 1;
 
+            // console.log("owners_contacted: ", owners_contacted);
+            // console.log("new_owners_contacted: ", ownerContacted);
+
             await db.query(
               "UPDATE users SET owners_contacted = $1, count_owner_contacted = $2 WHERE id = $3",
               [ownerContacted, countOwnerContacted, req.user.id]
             );
 
-            return res
-              .status(200)
-              .json({ exists: true, name, phone_number, email });
+            return res.status(200).json({ exists: true, ...ownerData });
           } else {
             // user has reached his max free limit
             return res.status(200).json({
@@ -1516,29 +1530,32 @@ const getAllPropertiesContacted = async (req, res, next) => {
 
     const propertyIds = rows[0].owners_contacted;
 
-    //.log(propertyIds);
-
     const propertyData = await Promise.all(
       propertyIds.map(async (id) => {
         if (id && id[0] === "h") {
           id = id.slice(2);
           const query = `SELECT * FROM houses where id=$1`;
-          const data = db.query(query, [id]);
-          //.log(data);
-          return data;
+          const data = await db.query(query, [id]);
+          const imageData = await db.query(
+            "SELECT media_url, filename FROM propertyMediaTable WHERE house_id = $1",
+            [id]
+          );
+          return { ...data.rows[0], images: imageData.rows };
         } else {
           id = id.slice(2);
           const query = `SELECT * FROM pgs where id=$1`;
-          const data = db.query(query, [id]);
+          const data = await db.query(query, [id]);
+          const imageData = await db.query(
+            "SELECT media_url, filename FROM propertyMediaTable WHERE pg_id = $1",
+            [id]
+          );
           //.log(data);
-          return data;
+          return { ...data.rows[0], images: imageData.rows };
         }
       })
     );
 
-    const data = propertyData.map((p) => p.rows).flat();
-
-    res.status(200).json(data);
+    res.status(200).json(propertyData);
   } catch (err) {
     next(err);
   }
