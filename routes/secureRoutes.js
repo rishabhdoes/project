@@ -46,6 +46,7 @@ const {
   isHouseOwner,
   housesValidation,
 } = require("../middleware/house-middleware");
+
 const {
   checkUserVerified,
   checkUserBlocked,
