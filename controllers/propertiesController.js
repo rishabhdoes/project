@@ -92,8 +92,8 @@ const newHouseProperty = async (req, res) => {
     }
 
     const { rows } = await db.query(
-      "INSERT INTO houses(city,owner_id,locality) values ($1, $2, $3) RETURNING *",
-      [city, userId, city]
+      "INSERT INTO houses(city,owner_id) values ($1, $2, $3) RETURNING *",
+      [city, userId]
     );
 
     const house = rows[0];
