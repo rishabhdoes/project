@@ -799,8 +799,7 @@ const listPropertiesOnSearch = async (req, res) => {
       facing = undefined,
       available_from = undefined,
       furnishing_type = undefined,
-      four_wheeler_parking = undefined,
-      two_wheeler_parking = undefined,
+      parking = undefined,
       property_with_image = undefined,
       property_type = undefined,
     } = filters || {};
@@ -842,9 +841,8 @@ const listPropertiesOnSearch = async (req, res) => {
       AND (available_from <= $8 OR $8 IS NULL)
       AND (available_from >= $9 OR $9 IS NULL)
       AND (furnishing_type = ANY ($10) OR $10 IS NULL)
-      AND (four_wheeler_parking = $11 OR $11 IS NULL)
-      AND (two_wheeler_parking = $12 OR $12 IS NULL)
-      AND (property_type = $13 OR $13 IS NULL)
+      AND (parking = ANY ($11) OR $11 IS NULL)
+      AND (property_type = $12 OR $12 IS NULL)
     ORDER BY (
       SELECT COUNT(DISTINCT word)
       FROM regexp_split_to_table(locality, E'\\s+') AS word
@@ -853,8 +851,8 @@ const listPropertiesOnSearch = async (req, res) => {
         FROM unnest($1::text[]) AS pattern
       )
     ) DESC, houses.updated_at DESC
-    OFFSET $14
-    LIMIT $15;
+    OFFSET $13
+    LIMIT $14;
   `;
 
     if (propertyType == "House" || propertyType == "house") {
@@ -869,8 +867,7 @@ const listPropertiesOnSearch = async (req, res) => {
         available_date_less_than,
         available_date_greater_than,
         furnishing_type,
-        four_wheeler_parking,
-        two_wheeler_parking,
+        parking,
         property_type,
         10 * (pgNo - 1),
         10,
@@ -897,10 +894,9 @@ const listPropertiesOnSearch = async (req, res) => {
         AND (available_from <= $8 OR $8 IS NULL)
         AND (available_from >= $9 OR $9 IS NULL)
         AND (furnishing_type = ANY ($10) OR $10 IS NULL)
-        AND (four_wheeler_parking = $11 OR $11 IS NULL)
-        AND (two_wheeler_parking = $12 OR $12 IS NULL)
-        AND (property_type = $13 OR $13 IS NULL)
-        AND(media_count>=$14 OR $14 IS NULL)
+        AND (parking = ANY ($11) OR $11 IS NULL)
+        AND (property_type = $12 OR $12 IS NULL)
+        AND(media_count>=$13 OR $13 IS NULL)
           `;
 
       const totalCount = await db.query(queryForhouseCount, [
@@ -914,8 +910,7 @@ const listPropertiesOnSearch = async (req, res) => {
         available_date_less_than,
         available_date_greater_than,
         furnishing_type,
-        four_wheeler_parking,
-        two_wheeler_parking,
+        parking,
         property_type,
         property_with_image,
       ]);
