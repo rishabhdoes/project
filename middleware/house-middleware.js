@@ -55,7 +55,7 @@ const housesValidation = async (req, res, next) => {
     apartment_name,
     bhk_type,
     floor = 0,
-    total_floors,
+    total_floors = 0,
     property_age,
     facing,
     builtup_area,
@@ -110,7 +110,7 @@ const housesValidation = async (req, res, next) => {
         throw new Error("Invalid Floor");
       }
 
-      if (!total_floors || total_floors < 0 || total_floors < floor) {
+      if (total_floors < 0 || total_floors < floor) {
         throw new Error("Invalid Floor");
       }
 
