@@ -54,7 +54,7 @@ const housesValidation = async (req, res, next) => {
     property_type,
     apartment_name,
     bhk_type,
-    floor,
+    floor = 0,
     total_floors,
     property_age,
     facing,
@@ -106,7 +106,7 @@ const housesValidation = async (req, res, next) => {
         throw new Error("Invalid BuiltType Area");
       }
 
-      if (!floor || floor < 0) {
+      if (floor < 0) {
         throw new Error("Invalid Floor");
       }
 
