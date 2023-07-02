@@ -82,7 +82,7 @@ const housesValidation = async (req, res, next) => {
     // part 4
     description,
     bathrooms_count,
-    balcony_count,
+    balcony_count = 0,
     water_supply,
     gym,
   } = req.body;
@@ -182,7 +182,7 @@ const housesValidation = async (req, res, next) => {
         throw new Error("Invalid bathroom data");
       }
 
-      if (!balcony_count || balcony_count < 0) {
+      if (balcony_count < 0) {
         throw new Error("Invalid balcony data");
       }
 
