@@ -12,4 +12,5 @@ module.exports = {
   CLOUDINARY_SECRET: process.env.CLOUDINARY_SECRET,
   SENDER_EMAIL: process.env.SENDER_EMAIL,
   SENDER_PASSWORD: process.env.SENDER_PASSWORD,
+  DB_PASSWORD: process.env.DB_PASSWORD,
 };
