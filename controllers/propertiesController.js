@@ -1373,10 +1373,10 @@ const getAdminPropertyList = async (req, res, next) => {
     const {
       ownerEmail = null,
       ownerName = null,
-      pgNo = 1,
+      pgNo = 0,
       startDate = null,
       lastDate = null,
-      propertyType = "houses",
+      propertyType = "both",
     } = req.body;
 
     // Assuming today's date if lastDate is not provided
@@ -1451,13 +1451,13 @@ ${startDate && assumedLastDate ? "AND pgs.updated_at BETWEEN $3 AND $4" : ""}
 
     queryParams.push(10 * (pgNo - 1), 10);
 
-    if (propertyType == "houses") {
+    if (propertyType == "House") {
       const houseData = await db.query(queryForHouse, queryParams);
       const countData = await db.query(queryForhouseCount, queryParamsForCount);
       return res
         .status(200)
         .json({ houses: houseData?.rows, count: countData?.rows[0].count });
-    } else if (propertyType == "pgs") {
+    } else if (propertyType == "Pg") {
       const pgData = await db.query(queryForPg, queryParams);
       const countData = await db.query(queryForpgCount, queryParamsForCount);
       return res
