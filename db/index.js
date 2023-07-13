@@ -1,11 +1,11 @@
 const { Pool } = require("pg");
 const queries = require("./tables");
-const { DB_PASSWORD } = require("../config");
+const { DB_PASSWORD, DB_HOST, DB_USER, DB_NAME } = require("../config");
 
 const pool = new Pool({
-  user: "homewale",
-  host: "homewale.c3bmqez4che8.ap-south-1.rds.amazonaws.com",
-  database: "homewale",
+  user: DB_USER,
+  host: DB_HOST,
+  database: DB_NAME,
   password: DB_PASSWORD,
   port: 5432,
 });
