@@ -54,8 +54,8 @@ const housesValidation = async (req, res, next) => {
     property_type,
     apartment_name,
     bhk_type,
-    floor,
-    total_floors,
+    floor = 0,
+    total_floors = 0,
     property_age,
     facing,
     builtup_area,
@@ -82,7 +82,7 @@ const housesValidation = async (req, res, next) => {
     // part 4
     description,
     bathrooms_count,
-    balcony_count,
+    balcony_count = 0,
     water_supply,
     gym,
   } = req.body;
@@ -106,11 +106,11 @@ const housesValidation = async (req, res, next) => {
         throw new Error("Invalid BuiltType Area");
       }
 
-      if (!floor || floor < 0) {
+      if (floor < 0) {
         throw new Error("Invalid Floor");
       }
 
-      if (!total_floors || total_floors < 0 || total_floors < floor) {
+      if (total_floors < 0 || total_floors < floor) {
         throw new Error("Invalid Floor");
       }
 
@@ -182,7 +182,7 @@ const housesValidation = async (req, res, next) => {
         throw new Error("Invalid bathroom data");
       }
 
-      if (!balcony_count || balcony_count < 0) {
+      if (balcony_count < 0) {
         throw new Error("Invalid balcony data");
       }
 
