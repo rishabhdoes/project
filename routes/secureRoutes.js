@@ -105,6 +105,7 @@ router.delete(
   checkUserVerified,
   handleDeleteImage
 );
+
 // profile
 router.post("/updateProfile", updateProfile);
 router.post("/generateVerificationEmail", generateVerificationEmail);
