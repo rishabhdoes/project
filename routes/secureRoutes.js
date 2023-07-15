@@ -1,6 +1,19 @@
 const { Router } = require("express");
 const { userAuth } = require("../middleware/auth-middleware");
 
+// image upload
+const multer = require("multer");
+const { storage } = require("../cloudinary");
+const upload = multer({
+  storage,
+  limits: {
+    // Set the maximum file size (in bytes)
+    fileSize: 5 * 1024 * 1024, // 1MB
+    // Set the maximum number of files that can be uploaded
+    files: 5,
+  },
+});
+
 const {
   newHouseProperty,
   newPgProperty,
@@ -9,32 +22,99 @@ const {
   getMyListings,
   shortlistProperty,
   showShortlists,
+  getHouse,
+  getUser,
+  getOwnerDetails,
+  getPg,
+  logout,
+  getAllPropertiesContacted,
 } = require("../controllers/propertiesController");
-const { housesValidation } = require("../validators/auth");
-const { validationMiddleware } = require("../middleware/validation-middleware");
+const {
+  updateProfile,
+  verifyEmail,
+  generateVerificationEmail,
+} = require("../controllers/profileController");
+
+const {
+  handleHouseImageUpload,
+  handleDescription,
+  handleDeleteImage,
+  getImages,
+} = require("../controllers/handleImage");
+
+const {
+  isHouseOwner,
+  housesValidation,
+} = require("../middleware/house-middleware");
+
+const {
+  checkUserVerified,
+  checkUserBlocked,
+} = require("../middleware/verified-middleware");
 
 const router = Router();
 
 router.use(userAuth);
+router.use(checkUserBlocked);
 
-// map
-
-// properties
-router.post("/newProperty/house/create", newHouseProperty);
+// houses
+router.post("/newProperty/house/create", checkUserVerified, newHouseProperty);
 router.post(
   "/newProperty/house/update/:houseId",
-  housesValidation,
-  validationMiddleware,
+  checkUserVerified,
+  [isHouseOwner, housesValidation],
   updateHouseProperty
 );
-router.post("/newProperty/pg/create", newPgProperty);
-router.post("/newProperty/pg/update/:pgId", updatePgProperty);
+
+router.get("/gethouse", getHouse);
+router.get("/getpg", getPg);
+
+// pgs
+router.post("/newProperty/pg/create", checkUserVerified, newPgProperty);
+router.post(
+  "/newProperty/pg/update/:pgId",
+  checkUserVerified,
+  updatePgProperty
+);
 
 // fetch all user listings
-router.get("/user/mylistings/", getMyListings);
+router.get("/user/me", getUser);
+router.get("/user/mylistings", getMyListings);
+router.get("/user/getAllPropertiesContacted", getAllPropertiesContacted);
 
 // shortlist properties
-router.post("/user/property/shortlist", shortlistProperty);
-router.get("/user/myshortlists", showShortlists);
+router.post("/user/property/shortlist", checkUserVerified, shortlistProperty);
+router.get("/user/myshortlists", checkUserVerified, showShortlists);
+
+// media
+router.post(
+  "/newProperty/house/uploadImage/:houseId",
+  checkUserVerified,
+  isHouseOwner,
+  upload.array("image"),
+  handleHouseImageUpload
+);
+router.get("/getHouseImage/:houseId", getImages);
+router.put(
+  "/house/uploadImage/change-description/:imageId",
+  checkUserVerified,
+  handleDescription
+);
+router.delete(
+  "/house/deleteImage/:imageId",
+  checkUserVerified,
+  handleDeleteImage
+);
+// profile
+router.post("/updateProfile", updateProfile);
+router.post("/generateVerificationEmail", generateVerificationEmail);
+// owner details
+router.post(
+  "/user/listings/get-owner-details",
+  checkUserVerified,
+  getOwnerDetails
+);
+
+router.get("/logout", logout);
 
 module.exports = router;

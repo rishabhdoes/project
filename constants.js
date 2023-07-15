@@ -9,6 +9,8 @@ const Coordinates = {
   Chennai: [13.0827, 80.2707, 15000],
   gurgaon: [28.4595, 77.0266, 10000],
   Gurgaon: [28.4595, 77.0266, 10000],
+  gurugram: [28.4595, 77.0266, 10000],
+  Gurugram: [28.4595, 77.0266, 10000],
   hyderabad: [17.385, 78.4867, 10000],
   Hyderabad: [17.385, 78.4867, 10000],
   delhi: [28.7041, 77.1025, 10000],
@@ -17,20 +19,16 @@ const Coordinates = {
   noida: [28.5355, 77.391, 10000],
 };
 
-const PropertyType = [
-  "Apartment",
-  "Independent House/Villa",
-  "Gated Community Villa",
-];
+const PropertyType = ["Apartment", "Independent House", "Gated Community"];
 
-const BHKType = ["1RK", "1BHK", "2BHK", "3BHK", "4BHK", "4+BHK"];
+const BHKType = ["1 RK", "1 BHK", "2 BHK", "3 BHK", "4 BHK", "4+ BHK"];
 
 const PropertyAge = [
-  "Less Than a year",
-  "1 to 3 year",
-  "3 to 5 year",
-  "5 to 10 year",
-  "More than 10 year",
+  "Less than 1 year",
+  "Between 1 to 3 years",
+  "Between 3 to 5 years",
+  "Between 5 to 10 years",
+  "Greater than 10 years",
 ];
 
 const Facing = [
@@ -44,11 +42,13 @@ const Facing = [
   "South-West",
 ];
 
-const PreferredTenants = ["Doesn't Matter", "Family", "Bachelors", "Company"];
+const PreferredTenants = ["Family", "Bachelor", "Both"];
 
-const Furnishing = ["Fully-furnished", "Semi-furnished", "Unfurnished"];
+const Furnishing = ["Fully Furnished", "Semi Furnished", "Unfurnished"];
 
 const Parking = ["Bike", "Car", "Both", "None"];
+
+const WATER_SUPPLY = ["BOREWELL", "CORPORATION", "BOTH"];
 
 module.exports = {
   Coordinates,
@@ -59,4 +59,5 @@ module.exports = {
   PreferredTenants,
   Furnishing,
   Parking,
+  WATER_SUPPLY,
 };

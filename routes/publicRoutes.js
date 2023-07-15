@@ -4,6 +4,7 @@ const {
   loginValidation,
   emailValidation,
   tokenValidation,
+  emailExists,
 } = require("../validators/auth");
 
 const { validationMiddleware } = require("../middleware/validation-middleware");
@@ -22,7 +23,9 @@ const {
 } = require("../controllers/Googleapiscontrolller");
 const {
   listPropertiesOnSearch,
+  getPropertyData,
 } = require("../controllers/propertiesController");
+const { verifyEmail } = require("../controllers/profileController");
 
 const router = Router();
 
@@ -50,4 +53,7 @@ router.post("/listProperties", listPropertiesOnSearch);
 router.get("/autocomplete", suggestionAutocomplete);
 router.get("/nearbyLocalities", nearbyLocalities);
 
+router.get("/getProperty/:id", getPropertyData);
+
+router.get(`/verifyEmail/:user_id/:email/:token`, emailExists, verifyEmail);
 module.exports = router;

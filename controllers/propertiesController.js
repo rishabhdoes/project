@@ -1,6 +1,81 @@
 const { Coordinates } = require("../constants");
 const db = require("../db");
+const { houses, houseFacilities } = require("../db/tables");
 const MAX_COUNT = 100;
+
+const getHouse = async (req, res) => {
+  try {
+    const { houseId } = req.query;
+    const data = await db.query(
+      `SELECT houses.*,
+      houseFacilities.ac,
+      houseFacilities.tv,
+      houseFacilities.fridge,
+      houseFacilities.water_filter,
+      houseFacilities.washing_machine,
+      houseFacilities.geyser,
+      houseFacilities.gym,
+      houseFacilities.lift,
+      houseFacilities.cctv,
+      houseFacilities.swimming_pool,
+      houseFacilities.power_backup,
+      houseFacilities.gas_pipeline,
+      houseFacilities.gated_security,
+      houseFacilities.park,
+      houseFacilities.wifi,
+      houseFacilities.visitor_parking,
+      houseFacilities.shopping_center,
+      houseFacilities.fire_safety,
+      houseFacilities.club_house,
+      houseFacilities.balcony_count,
+      houseFacilities.furniture,
+      houseFacilities.bathrooms_count 
+  FROM
+    houses
+  LEFT JOIN
+    houseFacilities ON houses.id = houseFacilities.house_id
+  WHERE houses.id = $1;
+  `,
+      [houseId]
+    );
+
+    const { rows } = data;
+    // //.log(rows[0]);
+    if (!rows.length) {
+      throw new Error("House not found");
+    } else {
+      return res.status(200).json(rows[0]);
+    }
+  } catch (err) {
+    return res.status(400).json(err);
+  }
+};
+
+const getPg = async (req, res) => {
+  try {
+    const { pgId } = req.query;
+
+    const data = await db.query(
+      ` SELECT *
+  FROM pgs
+  LEFT JOIN
+  pgFacilities ON pgs.id = pgFacilities.pg_id
+  WHERE pgs.id = $1;
+  `,
+      [pgId]
+    );
+
+    const { rows } = data;
+    // //.log(rows[0]);
+    if (!rows.length) {
+      throw new Error("Pg not found");
+    } else {
+      return res.status(200).json(rows[0]);
+    }
+  } catch (err) {
+    return res.status(400).json(err);
+  }
+};
 
 const newHouseProperty = async (req, res) => {
   try {
@@ -17,8 +92,8 @@ const newHouseProperty = async (req, res) => {
     }
 
     const { rows } = await db.query(
-      "INSERT INTO houses(city,owner_id,locality) values ($1, $2, $3) RETURNING *",
-      [city, userId, city]
+      "INSERT INTO houses(city,owner_id) values ($1, $2) RETURNING *",
+      [city, userId]
     );
 
     const house = rows[0];
@@ -57,21 +132,7 @@ const newPgProperty = async (req, res) => {
 
 const updateHouseProperty = async (req, res) => {
   try {
-    const userId = req.user.id;
     const { houseId } = req.params;
-
-    console.log(userId, houseId);
-
-    const { rows } = await db.query("SELECT * FROM houses WHERE id = $1", [
-      houseId,
-    ]);
-
-    if (!rows.length) return res.status(404).json("House does not exist");
-
-    const house = rows[0];
-
-    if (house.owner_id !== userId)
-      return res.status(401).json("Not Authorised");
 
     let updatedHouse = {};
 
@@ -87,6 +148,8 @@ const updateHouseProperty = async (req, res) => {
       facing = null,
       block = null,
       floor = null,
+      latitude = null,
+      longitude = null,
       total_floors = null,
       street = null,
       locality = null,
@@ -97,20 +160,26 @@ const updateHouseProperty = async (req, res) => {
       zip_code = null,
       rent = null,
       deposit = null,
+      parking = null,
       rent_negotiable = null,
       monthly_maintenance = null,
       maintenance_amount = null,
       preferred_tenants = null,
-      furnishing = null,
+      furnishing_type = null,
       lockin_period = null,
       secondary_number = null,
       available_from = null,
       property_type = null,
+      water_supply = null,
       rank = null,
+      houseNo = null,
+      pincode = null,
+      address = null,
     } = req.body;
 
     const houseObj = {
       title,
+      water_supply,
       is_apartment,
       apartment_type,
       apartment_name,
@@ -120,6 +189,8 @@ const updateHouseProperty = async (req, res) => {
       property_age,
       facing,
       block,
+      latitude,
+      longitude,
       floor,
       total_floors,
       street,
@@ -135,18 +206,23 @@ const updateHouseProperty = async (req, res) => {
       monthly_maintenance,
       maintenance_amount,
       preferred_tenants,
-      furnishing,
+      furnishing_type,
       lockin_period,
       secondary_number,
       available_from,
       property_type,
       rank,
+      parking,
+      houseNo,
+      pincode,
+      address,
     };
 
     // default array that contains all columns that exist in houses db
     const houseArrDBKeys = [
       "id",
       "owner_id",
+      "water_supply",
       "title",
       "is_apartment",
       "apartment_type",
@@ -158,6 +234,8 @@ const updateHouseProperty = async (req, res) => {
       "property_age",
       "facing",
       "block",
+      "latitude",
+      "longitude",
       "floor",
       "total_floors",
       "street",
@@ -173,11 +251,15 @@ const updateHouseProperty = async (req, res) => {
       "monthly_maintenance",
       "maintenance_amount",
       "preferred_tenants",
-      "furnishing",
+      "furnishing_type",
       "lockin_period",
       "secondary_number",
       "available_from",
+      "parking",
       "rank",
+      "houseNo",
+      "pincode",
+      "address",
     ];
 
     // check whether values are null or not
@@ -206,15 +288,16 @@ const updateHouseProperty = async (req, res) => {
     }
 
     const {
-      ac_count = null,
-      tv_count = null,
-      bedrooms_count = null,
+      ac = null,
+      tv = null,
       bathrooms_count = null,
+      bedrooms_count = null,
+      balcony_count = null,
       cupboard_count = null,
+      furniture = null,
       fridge = null,
       water_filter = null,
       washing_machine = null,
-      microwave = null,
       geyser = null,
       gym = null,
       two_wheeler_parking = null,
@@ -223,7 +306,6 @@ const updateHouseProperty = async (req, res) => {
       cctv = null,
       swimming_pool = null,
       power_backup = null,
-      water_supply = null,
       gas_pipeline = null,
       gated_security = null,
       park = null,
@@ -235,15 +317,16 @@ const updateHouseProperty = async (req, res) => {
     } = req.body;
 
     const houseFacilitiesObj = {
-      ac_count,
-      tv_count,
+      ac,
+      tv,
+      balcony_count,
+      furniture,
       bedrooms_count,
       bathrooms_count,
       cupboard_count,
       fridge,
       water_filter,
       washing_machine,
-      microwave,
       geyser,
       gym,
       two_wheeler_parking,
@@ -252,7 +335,6 @@ const updateHouseProperty = async (req, res) => {
       cctv,
       swimming_pool,
       power_backup,
-      water_supply,
       gas_pipeline,
       gated_security,
       park,
@@ -267,15 +349,16 @@ const updateHouseProperty = async (req, res) => {
     const houseFacilitiesDBKeys = [
       "id",
       "house_id",
-      "ac_count",
-      "tv_count",
+      "ac",
+      "tv",
+      "balcony_count",
+      "furniture",
       "bedrooms_count",
       "bathrooms_count",
       "cupboard_count",
       "fridge",
       "water_filter",
       "washing_machine",
-      "microwave",
       "geyser",
       "gym",
       "two_wheeler_parking",
@@ -284,7 +367,6 @@ const updateHouseProperty = async (req, res) => {
       "cctv",
       "swimming_pool",
       "power_backup",
-      "water_supply",
       "gas_pipeline",
       "gated_security",
       "park",
@@ -299,7 +381,7 @@ const updateHouseProperty = async (req, res) => {
     // also check if key exists in db
     const houseFacilitiesArr = Object.entries(houseFacilitiesObj)
       .filter(([key, value]) => {
-        value !== null && houseFacilitiesDBKeys.includes(key);
+        return value !== null && houseFacilitiesDBKeys.includes(key);
       })
       .map(([key, value]) => ({
         key,
@@ -307,42 +389,52 @@ const updateHouseProperty = async (req, res) => {
       }));
 
     if (houseFacilitiesArr.length > 0) {
-      let updatedHouseFacility = {};
+      let updatedHouseFacilities = {};
 
-      if (rows.length === 0) {
-        const columns = houseFacilitiesArr
-          .map((facility) => `"${facility.key}"`)
-          .join(", ");
-        const placeholders = houseFacilitiesArr
-          .map((_, index) => `$${index + 1}`)
-          .join(", ");
+      const { rows, rowCount } = await db.query(
+        "SELECT * FROM houseFacilities WHERE house_id = $1",
+        [houseId]
+      );
 
-        const dbQuery = `INSERT INTO houseFacilities (${columns}) VALUES (${placeholders}) RETURNING *`;
+      if (rowCount > 0) {
+        const parameterValues = houseFacilitiesArr.map(
+          (facility) => facility.value
+        );
+        parameterValues.push(houseId);
 
-        const values = houseFacilitiesArr.map((cur) => {
-          return cur.value;
-        });
-
-        const { rows } = await db.query(dbQuery, [...values, houseId]);
-        updatedHouseFacility = rows[0];
-      } else {
-        const updateFacilities = `UPDATE houseFacilities SET ${houseFacilitiesArr
+        const setClause = houseFacilitiesArr
           .map((facility, index) => `${facility.key} = $${index + 1}`)
-          .join(", ")} WHERE house_id = $${
+          .join(", ");
+
+        const updateQuery = `UPDATE houseFacilities SET ${setClause} WHERE house_id = $${
           houseFacilitiesArr.length + 1
         } RETURNING *`;
 
-        const values = houseFacilitiesArr.map((cur) => {
-          return cur.value;
-        });
+        const { rows } = await db.query(updateQuery, parameterValues);
 
-        updatedHouseFacility = await db.query(updateFacilities, [
-          ...values,
-          houseId,
-        ]);
+        if (rows.length > 0) updatedHouseFacilities = rows[0];
+      } else {
+        houseFacilitiesArr.push({ key: "house_id", value: houseId });
+
+        const parameterKeys = houseFacilitiesArr
+          .map((facility) => facility.key)
+          .join(", ");
+        const parameterValues = houseFacilitiesArr.map(
+          (facility) => facility.value
+        );
+
+        const setClause = houseFacilitiesArr
+          .map((_, index) => `$${index + 1}`)
+          .join(", ");
+
+        const insertQuery = `INSERT INTO houseFacilities (${parameterKeys}) VALUES (${setClause}) RETURNING *`;
+
+        const { rows } = await db.query(insertQuery, [...parameterValues]);
+
+        if (rows.length > 0) updatedHouseFacilities = rows[0];
       }
 
-      updatedHouse = { ...updatedHouse, ...updatedHouseFacility };
+      updatedHouse = { ...updatedHouse, ...updatedHouseFacilities };
     }
 
     res
@@ -649,19 +741,39 @@ const updatePgProperty = async (req, res) => {
 
 const getMyListings = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const { id: userId } = req.user;
+    const { propertyType } = req.query;
 
-    const houses = await db.query(
-      "SELECT * FROM houses LEFT JOIN houseFacilities ON houses.id = houseFacilities.house_id WHERE houses.owner_id = $1",
-      [userId]
-    );
+    let listings;
 
-    const pgs = await db.query(
-      "SELECT * FROM pgs LEFT OUTER JOIN pgfacilities ON pgs.id = pgfacilities.pg_id WHERE pgs.owner_id = $1",
-      [userId]
-    );
+    if (propertyType === "pgs") {
+      listings = await db.query(
+        "SELECT * FROM pgs LEFT OUTER JOIN pgfacilities ON pgs.id = pgfacilities.pg_id WHERE pgs.owner_id = $1",
+        [userId]
+      );
+    } else {
+      listings = await db.query(
+        "SELECT * FROM houses WHERE houses.owner_id = $1",
+        [userId]
+      );
 
-    res.status(200).json({ house: houses.rows, pg: pgs.rows });
+      let listingsWithImages = await Promise.all(
+        listings.rows.map(async (house) => {
+          const fetchData = async () => {
+            const { rows } = await db.query(
+              "SELECT media_url, id FROM propertyMediaTable WHERE house_id = $1",
+              [house.id]
+            );
+            return rows;
+          };
+
+          let newData = { ...house, images: await fetchData() };
+          return newData;
+        })
+      );
+
+      res.status(200).json({ listings: listingsWithImages });
+    }
   } catch (err) {
     res.status(400).json({
       message: err.toString(),
@@ -671,102 +783,258 @@ const getMyListings = async (req, res) => {
 
 const listPropertiesOnSearch = async (req, res) => {
   try {
-    const { propertyType, city, text, pgNo } = req.body;
+    const {
+      propertyType = "",
+      city = "",
+      text = [],
+      pgNo = 1,
+      filters = {},
+    } = req.body;
+
+    const {
+      bhk_type = undefined,
+      preferred_tenants = undefined,
+      price_greater_than = undefined,
+      price_less_than = undefined,
+      facing = undefined,
+      available_from = undefined,
+      furnishing_type = undefined,
+      parking = undefined,
+      property_with_image = undefined,
+      property_type = undefined,
+    } = filters || {};
+
+    let available_date_less_than = undefined;
+    let available_date_greater_than = undefined;
+    if (available_from === "immediate") {
+      available_date_less_than = new Date();
+    } else if (available_from === "within 15 days") {
+      available_date_less_than = new Date() + 15 * 24 * 60 * 60 * 1000;
+    } else if (available_from === "within 30 days") {
+      available_date_less_than += new Date() + 30 * 24 * 60 * 60 * 1000;
+    } else if (available_from === "after 30 days") {
+      available_date_greater_than += new Date() + 30 * 24 * 60 * 60 * 1000;
+    }
 
     const keywords = text.map((textArray) => {
       const op = textArray.split(",");
-      // console.log(op);
       return op;
     });
 
     const allKeywords = keywords.flat();
 
     const queryForHouse = `
-  SELECT    houses.id as houses_id,*,housefacilities.id as housefacilities_id 
-  FROM houses
-  LEFT JOIN housefacilities
-  on houses.id=housefacilities.house_id
-  WHERE city ILIKE $2
-    AND locality ILIKE ANY (
-      SELECT '%' || pattern || '%'
-      FROM unnest($1::text[]) AS pattern
-    )
-  ORDER BY (
-    SELECT COUNT(DISTINCT word)
-    FROM regexp_split_to_table(locality, E'\\s+') AS word
-    WHERE word ILIKE ANY (
-      SELECT '%' || pattern || '%'
-      FROM unnest($1::text[]) AS pattern
-    )
-  ) DESC, houses.created_at DESC
-  OFFSET $3
-  LIMIT $4;
-  
-  
-`;
-    const queryForPg = `
-SELECT *
-FROM pgs
-LEFT JOIN pgfacilities
-on pgs.id=pgfacilities.pg_id
-WHERE city ILIKE $2
-  AND locality ILIKE ANY (
-    SELECT '%' || pattern || '%'
-    FROM unnest($1::text[]) AS pattern
-  )
-ORDER BY (
-  SELECT COUNT(DISTINCT word)
-  FROM regexp_split_to_table(locality, E'\\s+') AS word
-  WHERE word ILIKE ANY (
-    SELECT '%' || pattern || '%'
-    FROM unnest($1::text[]) AS pattern
-  )
-) DESC, pgs.created_at DESC
-OFFSET $3
-LIMIT $4;
+    SELECT houses.id as houses_id,*, housefacilities.id as housefacilities_id
+    FROM houses
+    LEFT JOIN housefacilities ON houses.id = housefacilities.house_id
+    WHERE is_active='true'
+    AND is_verified='true'
+    AND city ILIKE $2
+      AND locality ILIKE ANY (
+        SELECT '%' || pattern || '%'
+        FROM unnest($1::text[]) AS pattern
+      )AND (bhk_type = ANY ($3) OR $3 IS NULL)
+      AND (preferred_tenants = ANY ($4) OR $4 IS NULL)
+      AND (rent >= $5 OR $5 IS NULL)
+      AND (rent <= $6 OR $6 IS NULL)
+      AND (facing = $7 OR $7 IS NULL)
+      AND (available_from <= $8 OR $8 IS NULL)
+      AND (available_from >= $9 OR $9 IS NULL)
+      AND (furnishing_type = ANY ($10) OR $10 IS NULL)
+      AND (parking = ANY ($11) OR $11 IS NULL)
+      AND (property_type = $12 OR $12 IS NULL)
+    ORDER BY (
+      SELECT COUNT(DISTINCT word)
+      FROM regexp_split_to_table(locality, E'\\s+') AS word
+      WHERE word ILIKE ANY (
+        SELECT '%' || pattern || '%'
+        FROM unnest($1::text[]) AS pattern
+      )
+    ) DESC, houses.updated_at DESC
+    OFFSET $13
+    LIMIT $14;
+  `;
 
-
-`;
-
-    if (propertyType == "House") {
-      const { rows } = await db.query(queryForHouse, [
+    if (propertyType == "House" || propertyType == "house") {
+      const houseData = await db.query(queryForHouse, [
         allKeywords,
         city,
-        10 * pgNo,
+        bhk_type,
+        preferred_tenants,
+        price_greater_than,
+        price_less_than,
+        facing,
+        available_date_less_than,
+        available_date_greater_than,
+        furnishing_type,
+        parking,
+        property_type,
+        10 * (pgNo - 1),
         10,
       ]);
 
-      return res.status(200).json(rows);
+      const houseIds = houseData.rows.map((row) => row.houses_id);
+
+      const queryForhouseCount = `
+      SELECT COUNT(*) AS total_count
+      FROM houses
+      LEFT JOIN housefacilities ON houses.id = housefacilities.house_id
+      WHERE 
+      is_active='true'
+      AND is_verified='true'
+      AND city ILIKE $2
+        AND locality ILIKE ANY (
+          SELECT '%' || pattern || '%'
+          FROM unnest($1::text[]) AS pattern
+        )AND (bhk_type = ANY ($3) OR $3 IS NULL)
+        AND (preferred_tenants = ANY ($4) OR $4 IS NULL)
+        AND (rent >= $5 OR $5 IS NULL)
+        AND (rent <= $6 OR $6 IS NULL)
+        AND (facing = $7 OR $7 IS NULL)
+        AND (available_from <= $8 OR $8 IS NULL)
+        AND (available_from >= $9 OR $9 IS NULL)
+        AND (furnishing_type = ANY ($10) OR $10 IS NULL)
+        AND (parking = ANY ($11) OR $11 IS NULL)
+        AND (property_type = $12 OR $12 IS NULL)
+        AND(media_count>=$13 OR $13 IS NULL)
+          `;
+
+      const totalCount = await db.query(queryForhouseCount, [
+        allKeywords,
+        city,
+        bhk_type,
+        preferred_tenants,
+        price_greater_than,
+        price_less_than,
+        facing,
+        available_date_less_than,
+        available_date_greater_than,
+        furnishing_type,
+        parking,
+        property_type,
+        property_with_image,
+      ]);
+
+      const queryForMedia = `
+      SELECT house_id, array_agg(DISTINCT filename) AS file_name,array_agg(DISTINCT media_url) AS media_url
+      FROM propertymediatable
+      WHERE house_id = ANY ($1)
+      GROUP BY house_id;
+    `;
+
+      let mediaData = await db.query(queryForMedia, [houseIds]);
+
+      const newMedia = mediaData.rows.map((mp) => {
+        const mediaFiles = [];
+
+        for (let i = 0; i < mp.file_name.length; i++) {
+          mediaFiles.push({
+            file_name: mp.file_name[i],
+            media_url: mp.media_url[i],
+          });
+        }
+
+        return { house_id: mp.house_id, images: mediaFiles };
+      });
+
+      //console.log(newMedia);
+
+      const mergedData = houseData.rows.map((house) => {
+        const media = newMedia.find(
+          (item) => item.house_id === house.houses_id
+        );
+        return {
+          ...house,
+          ...media,
+        };
+      });
+
+      let housesData = mergedData;
+      if (property_with_image) {
+        housesData = mergedData.filter((data) => {
+          return data.file_name.length > 0;
+        });
+      }
+
+      return res.status(200).json({
+        totalCount: totalCount?.rows[0]?.total_count,
+        allhouses: housesData,
+      });
+
+      // mergedData contains the combined information from house and media tables
+      // Rest of your code
     } else {
-      const { rows } = await db.query(queryForPg, [
-        allKeywords,
-        city,
-        10 * pgNo,
-        10,
-      ]);
+      const queryForPg = `SELECT  pgs.id as pgs_id,*,pgfacilities.id as pgfacilities_id
+      FROM pgs
+      LEFT JOIN pgfacilities ON pgs.id = pgfacilities.pg_id
+      WHERE is_active='true'
+      AND is_verified='true'
+      AND  city ILIKE $2
+        AND locality ILIKE ANY (
+          SELECT '%' || pattern || '%'
+          FROM unnest($1::text[]) AS pattern
+        )
+      ORDER BY (
+        SELECT COUNT(DISTINCT word)
+        FROM regexp_split_to_table(locality, E'\\s+') AS word
+        WHERE word ILIKE ANY (
+          SELECT '%' || pattern || '%'
+          FROM unnest($1::text[]) AS pattern
+        )
+      ) DESC, houses.updated_at DESC
+      OFFSET $3
+      LIMIT $4;`;
 
-      return res.status(200).json(rows);
+      const queryForpgCount = `
+      SELECT COUNT(*) AS total_count
+      FROM pgs
+      WHERE is_active='true'
+      AND is_verified='true'                                                                                                                                                                                             J 
+      AND  city ILIKE $2
+        AND locality ILIKE ANY (
+          SELECT '%' || pattern || '%'
+          FROM unnest($1::text[]) AS pattern
+        );`;
+
+      const pgsData = await db.query(queryForPg);
+      const pgsCount = await db.query(queryForpgCount);
+
+      return res
+        .status(200)
+        .json({ allpgs: pgsData.rows, totalCount: pgsCount.rows[0] });
     }
-  } catch (err) {
-    res.status(400).json({
-      message: err.toString(),
-    });
+  } catch (e) {
+    //.log(e);
+    res.status(400).json(e);
   }
 };
 
 const shortlistProperty = async (req, res) => {
   try {
-    const { userId, propertyType, propertyId } = req.body;
+    const { propertyType, propertyId } = req.body;
+    const { id: userId } = req.user;
 
     if (!userId || !propertyType || !propertyId)
       return res.status(401).json(res, false, "Invalid request");
 
     // check for house
     if (propertyType === "house") {
+      const data = await db.query("SELECT id FROM houses WHERE houses.id=$1", [
+        propertyId,
+      ]);
+
+      if (data.rows.length === 0) {
+        return res.status(400).json({ message: "House not found" });
+      }
+
       const { rows } = await db.query(
         "SELECT house_shortlists, count_shortlists FROM users WHERE id=$1",
         [userId]
       );
+
+      if (rows.length === 0) {
+        return res.status(400).json({ message: "User not found" });
+      }
 
       let oldHouseShortlists = rows[0].house_shortlists;
       let countShortlists = parseInt(rows[0].count_shortlists);
@@ -789,7 +1057,7 @@ const shortlistProperty = async (req, res) => {
               "Max limit reached. Please remove some from shortlists before shortlisting more properties"
             );
 
-        newHouseShortlists = [...newHouseShortlists, propertyId];
+        newHouseShortlists = [...oldHouseShortlists, propertyId];
         countShortlists += 1;
       }
 
@@ -800,10 +1068,22 @@ const shortlistProperty = async (req, res) => {
 
       return res.status(200).json("Updated House Shortlists");
     } else if (propertyType === "pg") {
+      const data = await db.query("SELECT id FROM pgs WHERE pgs.id=$1", [
+        propertyId,
+      ]);
+
+      if (data.rows.length === 0) {
+        res.status(400).json({ message: "Pg not found!" });
+      }
+
       const { rows } = await db.query(
         "SELECT pg_shortlists, count_shortlists FROM users WHERE id=$1",
         [userId]
       );
+
+      if (rows.length === 0) {
+        return res.status(400).json({ message: "User not found!" });
+      }
 
       let oldPgShortlists = rows[0].pg_shortlists;
       let countShortlists = parseInt(rows[0].count_shortlists);
@@ -833,6 +1113,8 @@ const shortlistProperty = async (req, res) => {
       );
 
       return res.status(200).json({ message: "Updated PG Shortlists" });
+    } else {
+      throw new Error("propertyType doesn't exist");
     }
   } catch (err) {
     res.status(400).json({
@@ -844,7 +1126,7 @@ const shortlistProperty = async (req, res) => {
 const showShortlists = async (req, res) => {
   try {
     const { propertyType } = req.query;
-    const userId = req.user.id;
+    const { id: userId } = req.user;
 
     const { rows } = await db.query("SELECT * FROM users WHERE id = $1", [
       userId,
@@ -852,29 +1134,31 @@ const showShortlists = async (req, res) => {
 
     let shortlists = [];
 
-    if (propertyType === "house") {
+    if (propertyType === "houses") {
       shortlists = rows[0].house_shortlists;
 
       const data = await Promise.all(
         shortlists.map(async (shortlistId) => {
           const { rows } = await db.query(
-            "SELECT houses.id, houses.available_from, houses.builtup_area, houses.rent, houses.deposit, houses.furnishing_type, houses.bhk_type FROM houses WHERE houses.id = $1",
+            "SELECT houses.id, houses.available_from, houses.builtup_area, houses.rent, houses.deposit, houses.furnishing_type, houses.bhk_type, houses.locality FROM houses WHERE houses.id = $1",
             [shortlistId]
           );
 
           const data = await db.query(
-            "SELECT * FROM propertyMediaTable WHERE house_id = $1",
+            "SELECT filename, id, media_url FROM propertymediatable WHERE house_id = $1",
             [shortlistId]
           );
 
-          if (data.rows.length > 0) rows[0].push(data.rows);
+          if (data.rows.length > 0) {
+            rows[0] = { ...rows[0], images: data.rows };
+          }
 
           return rows[0];
         })
       );
 
       return res.status(200).json({ data });
-    } else if (propertyType === "pg") {
+    } else if (propertyType === "pgs") {
       shortlists = rows[0].pg_shortlists;
 
       const data = await Promise.all(
@@ -895,14 +1179,385 @@ const showShortlists = async (req, res) => {
         })
       );
 
-      return res.status(200).json({ data });
+      return res.status(200).json(data);
     } else {
       throw Error({
         message: "You are lost!",
       });
     }
   } catch (err) {
-    return res.status(400).json(err.message);
+    return res.status(400).json(err);
+  }
+};
+
+const getPropertyData = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) throw new Error("id invalid");
+
+    const query = `SELECT houses.id as houses_id,*,housefacilities.id as housefacilities_id 
+   FROM houses
+   LEFT JOIN housefacilities
+   on houses.id=housefacilities.house_id
+   where houses.id=$1
+`;
+    const { rows } = await db.query(query, [id]);
+
+    const data = await db.query(
+      "SELECT media_url, description FROM propertyMediaTable WHERE house_id = $1",
+      [id]
+    );
+    const media = data.rows;
+
+    res.status(200).json({ ...rows[0], media });
+  } catch (e) {
+    res.status(401).json({ message: "not able to find property" });
+  }
+};
+
+const getUser = async (req, res) => {
+  const userId = req.user.id;
+
+  if (!userId) throw new Error("UserId not found");
+
+  try {
+    const { rows, rowCount } = await db.query(
+      "SELECT * FROM users WHERE id=$1",
+      [userId]
+    );
+    if (rowCount) {
+      return res.status(200).json(rows[0]);
+    } else {
+      throw new Error("User not found");
+    }
+  } catch (err) {
+    return res.status(400).json(err);
+  }
+};
+
+const getOwnerDetails = async (req, res) => {
+  try {
+    const { houseId = null, pgId = null } = req.body;
+    if (houseId) {
+      const { rows, rowCount } = await db.query(
+        "SELECT * FROM houses WHERE id = $1",
+        [houseId]
+      );
+
+      if (rowCount <= 0) {
+        throw new Error("House does not exist");
+      } else {
+        const ownerId = rows[0].owner_id;
+        const userId = req.user.id;
+
+        // user Data
+        let userData = await db.query(
+          "SELECT owners_contacted, count_owner_contacted FROM users WHERE id = $1",
+          [userId]
+        );
+
+        userData = userData.rows[0];
+
+        const { count_owner_contacted, owners_contacted } = userData;
+
+        let ownerData = await db.query(
+          "SELECT name, email, phone_number FROM users WHERE id = $1",
+          [ownerId]
+        );
+        ownerData = ownerData.rows[0];
+
+        // console.log(userData, ownerData);
+
+        // if user is himself the owner or
+        // he has already seen contacts for this property
+        // show owner details
+        // console.log("owners_contacted: ", owners_contacted);
+        // console.log("h_" + houseId);
+
+        if (
+          ownerId === req.user.id ||
+          owners_contacted?.includes("h_" + houseId)
+        ) {
+          return res.status(200).json({ exists: true, ...ownerData });
+        } else {
+          // if user currently has more limit to view owners
+          //.log(count_owner_contacted);
+          if (count_owner_contacted > 0) {
+            //.log("ser" + req.user.id);
+            const ownerContacted = [...owners_contacted, "h_" + houseId];
+            const countOwnerContacted = count_owner_contacted - 1;
+
+            // console.log("owners_contacted: ", owners_contacted);
+            // console.log("new_owners_contacted: ", ownerContacted);
+
+            await db.query(
+              "UPDATE users SET owners_contacted = $1, count_owner_contacted = $2 WHERE id = $3",
+              [ownerContacted, countOwnerContacted, req.user.id]
+            );
+
+            return res.status(200).json({ exists: true, ...ownerData });
+          } else {
+            // user has reached his max free limit
+            return res.status(200).json({
+              exists: false,
+              message: "You have used your free credits",
+            });
+          }
+        }
+      }
+    } else {
+      const { rows, rowCount } = await db.query(
+        "SELECT * FROM pgs WHERE id = $1",
+        [pgId]
+      );
+
+      if (rowCount <= 0) {
+        throw new Error("Pg does not exist");
+      } else {
+        const ownerId = rows[0].owner_id;
+
+        const data = await db.query(
+          "SELECT owners_contacted, count_owner_contacted, name, email, phone_number FROM users WHERE id = $1",
+          [ownerId]
+        );
+
+        const userData = data.rows[0];
+
+        const {
+          name,
+          email,
+          phone_number,
+          count_owner_contacted,
+          owners_contacted,
+        } = userData;
+
+        // if user is himself the owner or
+        // he has already seen contacts for this property
+        // show owner details
+        if (ownerId === req.user.id || owners_contacted.includes("p_" + pgId)) {
+          return res
+            .status(200)
+            .json({ exists: true, name, email, phone_number });
+        } else {
+          // if user currently has more limit to view owners
+          if (count_owner_contacted > 0) {
+            const ownerContacted = [...owners_contacted, "p_" + pgId];
+            const countOwnerContacted = count_owner_contacted - 1;
+
+            await db.query(
+              "UPDATE users SET owners_contacted = $1, count_owner_contacted = $2 WHERE id = $3",
+              [ownerContacted, countOwnerContacted, req.user.id]
+            );
+
+            return res
+              .status(200)
+              .json({ exists: true, name, phone_number, email });
+          } else {
+            // user has reached his max free limit
+            return res.status(200).json({
+              exists: false,
+              message: "You have used your free credits",
+            });
+          }
+        }
+      }
+    }
+  } catch (err) {
+    res.status(400).json(err);
+  }
+};
+
+const getAdminPropertyList = async (req, res, next) => {
+  try {
+    const {
+      ownerEmail = null,
+      ownerName = null,
+      pgNo = 1,
+      startDate = null,
+      lastDate = null,
+      propertyType = "houses",
+    } = req.body;
+
+    // Assuming today's date if lastDate is not provided
+
+    const today = new Date().toISOString().split("T")[0];
+    const assumedLastDate = lastDate || today;
+
+    const queryForHouse = `
+  SELECT houses.id
+  FROM houses
+   JOIN users ON houses.owner_id = users.id
+   WHERE is_active='true'
+  AND is_verified='true'
+  AND (users.email = $1 OR $1 IS NULL)
+  
+  AND (users.name = $2 OR $2 IS NULL)
+  
+  ${
+    startDate && assumedLastDate
+      ? "AND houses.updated_at BETWEEN $3 AND $4"
+      : ""
+  }
+  OFFSET $${startDate && assumedLastDate ? "5" : "3"}
+  LIMIT $${startDate && assumedLastDate ? "6" : "4"};
+`;
+
+    const queryForPg = `
+SELECT pgs.*
+FROM pgs
+ JOIN users ON pgs.owner_id = users.id
+  WHERE is_active='true'
+AND is_verified='true'
+AND (users.email = $1 OR $1 IS NULL)
+AND (users.name = $2 OR $2 IS NULL)
+${startDate && assumedLastDate ? "AND pgs.updated_at BETWEEN $3 AND $4" : ""}
+OFFSET $${startDate && assumedLastDate ? "5" : "3"}
+LIMIT $${startDate && assumedLastDate ? "6" : "4"};
+
+`;
+
+    const queryForhouseCount = `
+  SELECT count(*)
+  FROM houses
+  JOIN users ON houses.owner_id = users.id
+    WHERE is_active='true'
+  AND is_verified='true'
+  AND  (users.email = $1 OR $1 IS NULL)
+  AND (users.name = $2 OR $2 IS NULL)
+  ${
+    startDate && assumedLastDate
+      ? "AND houses.updated_at BETWEEN $3 AND $4"
+      : ""
+  }
+`;
+
+    const queryForpgCount = `
+SELECT count(pgs.id)
+FROM pgs
+ JOIN users ON pgs.owner_id = users.id
+  WHERE is_active='true'
+      AND is_verified='true'
+      AND  (users.email = $1 OR $1 IS NULL)
+AND (users.name = $2 OR $2 IS NULL)
+${startDate && assumedLastDate ? "AND pgs.updated_at BETWEEN $3 AND $4" : ""}
+
+`;
+    let queryParams = [ownerEmail, ownerName];
+    if (startDate && assumedLastDate) {
+      queryParams.push(startDate, assumedLastDate);
+    }
+    let queryParamsForCount = [...queryParams];
+
+    queryParams.push(10 * (pgNo - 1), 10);
+
+    if (propertyType == "houses") {
+      const houseData = await db.query(queryForHouse, queryParams);
+      const countData = await db.query(queryForhouseCount, queryParamsForCount);
+      return res
+        .status(200)
+        .json({ houses: houseData?.rows, count: countData?.rows[0].count });
+    } else if (propertyType == "pgs") {
+      const pgData = await db.query(queryForPg, queryParams);
+      const countData = await db.query(queryForpgCount, queryParamsForCount);
+      return res
+        .status(200)
+        .json({ pgs: pgData?.rows, count: countData?.rows[0]?.count });
+    } else {
+      const houseData = await db.query(queryForHouse, queryParams);
+      const pgData = await db.query(queryForPg, queryParams);
+      const countData1 = await db.query(
+        queryForhouseCount,
+        queryParamsForCount
+      );
+      const countData2 = await db.query(queryForpgCount, queryParamsForCount);
+
+      res.status(200).json({
+        houses: houseData?.rows,
+        pgs: pgData?.rows,
+        count:
+          parseInt(countData1?.rows[0].count) +
+          parseInt(countData2?.rows[0].count),
+      });
+    }
+  } catch (e) {
+    next(e);
+  }
+};
+
+const deleteProperty = async (req, res, next) => {
+  try {
+    const { propertyId, propertyType } = req.body;
+    if (propertyType === "House") {
+      const queryUpdateIsActive = `
+  UPDATE houses
+  SET is_active = $1
+  WHERE id = $2;
+`;
+      await db.query(queryUpdateIsActive, [false, propertyId]);
+    } else {
+      const queryUpdateIsActive = `
+    UPDATE pgs
+    SET is_active = $1
+    WHERE id = $2;
+  `;
+
+      await db.query(queryUpdateIsActive, [false, propertyId]);
+    }
+    res.status(200).json({ message: "Updated!!" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const logout = async (req, res) => {
+  try {
+    return res.status(200).clearCookie("token").json({
+      success: true,
+      message: "Logged out successfully",
+    });
+  } catch (err) {
+    res.status(400).json(err);
+  }
+};
+
+const getAllPropertiesContacted = async (req, res, next) => {
+  try {
+    const query = `SELECT owners_contacted FROM users WHERE id=$1`;
+    const { id: userId } = req.user;
+
+    const { rows } = await db.query(query, [userId]);
+
+    const propertyIds = rows[0].owners_contacted;
+
+    const propertyData = await Promise.all(
+      propertyIds.map(async (id) => {
+        if (id && id[0] === "h") {
+          id = id.slice(2);
+          const query = `SELECT * FROM houses where id=$1`;
+          const data = await db.query(query, [id]);
+          const imageData = await db.query(
+            "SELECT media_url, filename FROM propertyMediaTable WHERE house_id = $1",
+            [id]
+          );
+          return { ...data.rows[0], images: imageData.rows };
+        } else {
+          id = id.slice(2);
+          const query = `SELECT * FROM pgs where id=$1`;
+          const data = await db.query(query, [id]);
+          const imageData = await db.query(
+            "SELECT media_url, filename FROM propertyMediaTable WHERE pg_id = $1",
+            [id]
+          );
+          //.log(data);
+          return { ...data.rows[0], images: imageData.rows };
+        }
+      })
+    );
+
+    res.status(200).json(propertyData);
+  } catch (err) {
+    next(err);
   }
 };
 
@@ -915,4 +1570,13 @@ module.exports = {
   shortlistProperty,
   getMyListings,
   showShortlists,
+  getHouse,
+  getPropertyData,
+  getUser,
+  logout,
+  getOwnerDetails,
+  getPg,
+  getAdminPropertyList,
+  deleteProperty,
+  getAllPropertiesContacted,
 };
