@@ -92,8 +92,8 @@ const newHouseProperty = async (req, res) => {
     }
 
     const { rows } = await db.query(
-      "INSERT INTO houses(city,owner_id) values ($1, $2) RETURNING *",
-      [city, userId]
+      "INSERT INTO houses(city,owner_id,locality) values ($1, $2, $3) RETURNING *",
+      [city, userId, city]
     );
 
     const house = rows[0];
@@ -967,13 +967,23 @@ const listPropertiesOnSearch = async (req, res) => {
       const queryForPg = `SELECT  pgs.id as pgs_id,*,pgfacilities.id as pgfacilities_id
       FROM pgs
       LEFT JOIN pgfacilities ON pgs.id = pgfacilities.pg_id
-      WHERE is_active='true'
-      AND is_verified='true'
+      WHERE isactive='true'
+      AND isverified='true'
       AND  city ILIKE $2
         AND locality ILIKE ANY (
           SELECT '%' || pattern || '%'
           FROM unnest($1::text[]) AS pattern
         )
+        AND (room_type = ANY ($3) OR $3 IS NULL)
+      AND (preferred_tenants = ANY ($4) OR $4 IS NULL)
+      AND (rent >= $5 OR $5 IS NULL)
+      AND (rent <= $6 OR $6 IS NULL)
+      AND (available_from <= $7 OR $7 IS NULL)
+      AND (available_from >= $8 OR $8 IS NULL)
+      AND (parking = ANY ($9) OR $9 IS NULL)
+      AND (breakfast='true'  OR $10 IS NULL)
+      AND (lunch='true'  OR $11 IS NULL)
+      AND (dinner='true'  OR $12 IS NULL)
       ORDER BY (
         SELECT COUNT(DISTINCT word)
         FROM regexp_split_to_table(locality, E'\\s+') AS word
@@ -981,23 +991,39 @@ const listPropertiesOnSearch = async (req, res) => {
           SELECT '%' || pattern || '%'
           FROM unnest($1::text[]) AS pattern
         )
-      ) DESC, houses.updated_at DESC
+      ) DESC, pgs.updated_at DESC
       OFFSET $3
       LIMIT $4;`;
 
       const queryForpgCount = `
       SELECT COUNT(*) AS total_count
       FROM pgs
-      WHERE is_active='true'
-      AND is_verified='true'                                                                                                                                                                                             J 
+      WHERE isactive='true'
+      AND isverified='true'                                                                                                                                                                                             
       AND  city ILIKE $2
         AND locality ILIKE ANY (
           SELECT '%' || pattern || '%'
           FROM unnest($1::text[]) AS pattern
-        );`;
+        ); 
+        AND (room_type = ANY ($3) OR $3 IS NULL)
+      AND (preferred_tenants = ANY ($4) OR $4 IS NULL)
+      AND (rent >= $5 OR $5 IS NULL)
+      AND (rent <= $6 OR $6 IS NULL)
+      AND (available_from <= $7 OR $7 IS NULL)
+      AND (available_from >= $8 OR $8 IS NULL)
+      AND (parking = ANY ($9) OR $9 IS NULL)
+      AND (breakfast='true'  OR $10 IS NULL)
+      AND (lunch='true'  OR $11 IS NULL)
+      AND (dinner='true'  OR $12 IS NULL)
+        `;
 
-      const pgsData = await db.query(queryForPg);
-      const pgsCount = await db.query(queryForpgCount);
+      const pgsData = await db.query(queryForPg, [
+        allKeywords,
+        city,
+        10 * (pgNo - 1),
+        10,
+      ]);
+      const pgsCount = await db.query(queryForpgCount, [allKeywords, city]);
 
       return res
         .status(200)
@@ -1373,10 +1399,10 @@ const getAdminPropertyList = async (req, res, next) => {
     const {
       ownerEmail = null,
       ownerName = null,
-      pgNo = 1,
+      pgNo = 0,
       startDate = null,
       lastDate = null,
-      propertyType = "houses",
+      propertyType = "both",
     } = req.body;
 
     // Assuming today's date if lastDate is not provided
@@ -1385,7 +1411,7 @@ const getAdminPropertyList = async (req, res, next) => {
     const assumedLastDate = lastDate || today;
 
     const queryForHouse = `
-  SELECT houses.id
+  SELECT *
   FROM houses
    JOIN users ON houses.owner_id = users.id
    WHERE is_active='true'
@@ -1451,13 +1477,13 @@ ${startDate && assumedLastDate ? "AND pgs.updated_at BETWEEN $3 AND $4" : ""}
 
     queryParams.push(10 * (pgNo - 1), 10);
 
-    if (propertyType == "houses") {
+    if (propertyType == "House") {
       const houseData = await db.query(queryForHouse, queryParams);
       const countData = await db.query(queryForhouseCount, queryParamsForCount);
       return res
         .status(200)
         .json({ houses: houseData?.rows, count: countData?.rows[0].count });
-    } else if (propertyType == "pgs") {
+    } else if (propertyType == "Pg") {
       const pgData = await db.query(queryForPg, queryParams);
       const countData = await db.query(queryForpgCount, queryParamsForCount);
       return res
