@@ -1390,6 +1390,7 @@ const getOwnerDetails = async (req, res) => {
       }
     }
   } catch (err) {
+    m;
     res.status(400).json(err);
   }
 };
@@ -1511,24 +1512,24 @@ ${startDate && assumedLastDate ? "AND pgs.updated_at BETWEEN $3 AND $4" : ""}
   }
 };
 
-const deleteProperty = async (req, res, next) => {
+const togglePropertyBlockedStatus = async (req, res, next) => {
   try {
     const { propertyId, propertyType } = req.body;
     if (propertyType === "House") {
       const queryUpdateIsActive = `
   UPDATE houses
-  SET is_active = $1
-  WHERE id = $2;
+  SET is_active = NOT is_active
+  WHERE id = $1;
 `;
-      await db.query(queryUpdateIsActive, [false, propertyId]);
+      await db.query(queryUpdateIsActive, [propertyId]);
     } else {
       const queryUpdateIsActive = `
     UPDATE pgs
-    SET is_active = $1
+    SET is_active = !is_active
     WHERE id = $2;
   `;
 
-      await db.query(queryUpdateIsActive, [false, propertyId]);
+      await db.query(queryUpdateIsActive, [propertyId]);
     }
     res.status(200).json({ message: "Updated!!" });
   } catch (error) {
@@ -1603,6 +1604,6 @@ module.exports = {
   getOwnerDetails,
   getPg,
   getAdminPropertyList,
-  deleteProperty,
+  togglePropertyBlockedStatus,
   getAllPropertiesContacted,
 };

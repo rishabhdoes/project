@@ -82,7 +82,28 @@ const generateVerificationEmail = async (req, res) => {
       from: SENDER_EMAIL,
       to: email,
       subject: "Verify email",
-      html: `<a href="${link}">Click here to verify your email</a>`,
+      html: `<div style="font-family: Arial, sans-serif; padding: 20px;">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <img src="https://example.com/homewale-logo.png" alt="Homewale Logo" style="width: 150px;">
+      </div>
+      <div style="text-align: center; margin-bottom: 20px;">
+        <h2>Email Verification</h2>
+        <p>Hello,</p>
+        <p>Thank you for registering with Homewale.com! To complete your registration, please click the verification button below:</p>
+        <div style="text-align: center;">
+          <a href="${link}" style="display: inline-block; padding: 12px 24px; font-size: 18px; text-decoration: none; background-color: #007bff; color: #fff; border-radius: 4px;">Verify Email</a>
+        </div>
+        <p>If the button above doesn't work, you can also copy and paste the following link into your web browser:</p>
+        <p><strong>${link}</strong></p>
+        <p>Please verify your email within the next 15 minutes to activate your account.</p>
+        <p>If you didn't register on Homewale.com, please ignore this email.</p>
+        <p>Thank you,</p>
+        <p>The Homewale.com Team</p>
+      </div>
+      <div style="text-align: center;">
+        <p style="font-size: 12px;">This email was sent by Homewale.com, a brokerage site similar to Housing.com and Nobroker. If you have any questions or need assistance, please <a href="https://homewale.com/contact">contact us</a>.</p>
+      </div>
+    </div>`,
     });
     return sendMsg(res, 201, true);
   } catch (error) {
@@ -111,10 +132,23 @@ const verifyEmail = async (req, res) => {
   }
 };
 
+const getAllUserBlocked = async (req, res, next) => {
+  try {
+    const query = `SELECT * FROM users WHERE is_blocked='true'`;
+
+    const { rows } = await db.query(query);
+
+    res.status(200).json({ blockedUsers: rows });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   updateProfile,
   getProfile,
   toggleUserBlockedStatus,
   verifyEmail,
   generateVerificationEmail,
+  getAllUserBlocked,
 };
