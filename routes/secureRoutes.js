@@ -38,14 +38,20 @@ const {
 const {
   handleHouseImageUpload,
   handleDescription,
-  handleDeleteImage,
-  getImages,
+  handleHouseImageDelete,
+  getHouseImages,
+  handlePgImageUpload,
+  getPgImages,
+  handlePgDescription,
+  handlePgImageDelete,
 } = require("../controllers/handleImage");
 
 const {
   isHouseOwner,
   housesValidation,
 } = require("../middleware/house-middleware");
+
+const { isPgOwner, pgValidation } = require("../middleware/pg-middleware");
 
 const {
   checkUserVerified,
@@ -74,6 +80,7 @@ router.post("/newProperty/pg/create", checkUserVerified, newPgProperty);
 router.post(
   "/newProperty/pg/update/:pgId",
   checkUserVerified,
+  [isPgOwner, pgValidation],
   updatePgProperty
 );
 
@@ -86,7 +93,9 @@ router.get("/user/getAllPropertiesContacted", getAllPropertiesContacted);
 router.post("/user/property/shortlist", checkUserVerified, shortlistProperty);
 router.get("/user/myshortlists", checkUserVerified, showShortlists);
 
-// media
+// Media Routes //
+
+// HOUSE MEDIA ROUTES //
 router.post(
   "/newProperty/house/uploadImage/:houseId",
   checkUserVerified,
@@ -94,7 +103,7 @@ router.post(
   upload.array("image"),
   handleHouseImageUpload
 );
-router.get("/getHouseImage/:houseId", getImages);
+router.get("/getHouseImage/:houseId", getHouseImages);
 router.put(
   "/house/uploadImage/change-description/:imageId",
   checkUserVerified,
@@ -103,9 +112,29 @@ router.put(
 router.delete(
   "/house/deleteImage/:imageId",
   checkUserVerified,
-  handleDeleteImage
+  handleHouseImageDelete
 );
 
+// PG MEDIA ROUTES //
+router.post(
+  "/newProperty/pg/uploadImage/:pgId",
+  checkUserVerified,
+  isPgOwner,
+  upload.array("image"),
+  handlePgImageUpload
+);
+
+router.get("/getPgImage/:pgId", getPgImages);
+router.put(
+  "/pg/uploadImage/change-description/:imageId",
+  checkUserVerified,
+  handlePgDescription
+);
+router.delete(
+  "/pg/deleteImage/:imageId",
+  checkUserVerified,
+  handlePgImageDelete
+);
 // profile
 router.post("/updateProfile", updateProfile);
 router.post("/generateVerificationEmail", generateVerificationEmail);

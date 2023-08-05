@@ -43,6 +43,7 @@ const {
   Coordinates,
   WATER_SUPPLY,
 } = require("../constants");
+
 const {
   getCoordinatesByLocation,
 } = require("../controllers/Googleapiscontrolller");
@@ -196,5 +197,4 @@ const housesValidation = async (req, res, next) => {
   }
 };
 
-module.exports = { housesValidation };
 module.exports = { isHouseOwner, housesValidation };
