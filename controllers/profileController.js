@@ -58,6 +58,24 @@ const toggleUserBlockedStatus = async (req, res, next) => {
   WHERE id = $1;
 `;
 
+    const queryForMakingRespectiveHouseDeactivated = `
+UPDATE houses
+  SET is_active = false
+  WHERE owner_id = $1;
+
+`;
+
+    const queryForMakingRespectivePgsDeactivated = `
+UPDATE pgs
+  SET is_active = false
+  WHERE owner_id = $1;
+
+`;
+
+    await db.query(queryForMakingRespectiveHouseDeactivated, [userId]);
+
+    await db.query(queryForMakingRespectivePgsDeactivated, [userId]);
+
     await db.query(queryToggleIsBlocked, [userId]);
     res.status(200).json({ message: "Updated!!" });
   } catch (e) {
