@@ -1419,7 +1419,7 @@ const getAdminPropertyList = async (req, res, next) => {
   AND is_verified='true'
   AND (users.email = $1 OR $1 IS NULL)
   
-  AND (users.name = $2 OR $2 IS NULL)
+  AND (users.name ILIKE $2 OR $2 IS NULL)
   
   ${
     startDate && assumedLastDate
@@ -1437,7 +1437,7 @@ FROM pgs
   WHERE is_active='true'
 AND is_verified='true'
 AND (users.email = $1 OR $1 IS NULL)
-AND (users.name = $2 OR $2 IS NULL)
+AND (users.name ILIKE $2 OR $2 IS NULL)
 ${startDate && assumedLastDate ? "AND pgs.updated_at BETWEEN $3 AND $4" : ""}
 OFFSET $${startDate && assumedLastDate ? "5" : "3"}
 LIMIT $${startDate && assumedLastDate ? "6" : "4"};
@@ -1451,7 +1451,7 @@ LIMIT $${startDate && assumedLastDate ? "6" : "4"};
     WHERE is_active='true'
   AND is_verified='true'
   AND  (users.email = $1 OR $1 IS NULL)
-  AND (users.name = $2 OR $2 IS NULL)
+  AND (users.name ILIKE $2 OR $2 IS NULL)
   ${
     startDate && assumedLastDate
       ? "AND houses.updated_at BETWEEN $3 AND $4"
@@ -1466,7 +1466,7 @@ FROM pgs
   WHERE is_active='true'
       AND is_verified='true'
       AND  (users.email = $1 OR $1 IS NULL)
-AND (users.name = $2 OR $2 IS NULL)
+AND (users.name ILIKE $2 OR $2 IS NULL)
 ${startDate && assumedLastDate ? "AND pgs.updated_at BETWEEN $3 AND $4" : ""}
 
 `;
