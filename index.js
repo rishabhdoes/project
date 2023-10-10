@@ -51,7 +51,7 @@ app.post("/payment", async (req, res) => {
     } = req.body;
 
     // Generate encryption keys and encrypt payment data
-    const workingKey = "YOUR_WORKING_KEY"; // Replace with your actual working key
+    const workingKey = "720702AAB0A040750D93E088C061049E"; // Replace with your actual working key
     const md5 = crypto.createHash("md5").update(workingKey).digest();
     const keyBase64 = Buffer.from(md5).toString("base64");
     var ivBase64 = Buffer.from([
