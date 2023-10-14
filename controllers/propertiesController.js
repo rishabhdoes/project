@@ -1242,6 +1242,32 @@ const getPropertyData = async (req, res) => {
   }
 };
 
+const getPropertyDataForPg = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) throw new Error("id invalid");
+
+    const query = `SELECT pgs.id as pgs_id,*,pgfacilities.id as pgfacilities_id 
+   FROM pgs
+   LEFT JOIN pgfacilities
+   on pgs.id=pgfacilities.pg_id
+   where pgs.id=$1
+`;
+    const { rows } = await db.query(query, [id]);
+
+    const data = await db.query(
+      "SELECT media_url, description FROM propertyMediaTable WHERE pg_id = $1",
+      [id]
+    );
+    const media = data.rows;
+
+    res.status(200).json({ ...rows[0], media });
+  } catch (e) {
+    res.status(401).json({ message: "not able to find property" });
+  }
+};
+
 const getUser = async (req, res) => {
   const userId = req.user.id;
 
@@ -1606,4 +1632,5 @@ module.exports = {
   getAdminPropertyList,
   togglePropertyBlockedStatus,
   getAllPropertiesContacted,
+  getPropertyDataForPg,
 };
