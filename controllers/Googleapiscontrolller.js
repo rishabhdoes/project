@@ -127,8 +127,38 @@ const nearbyLocalities = async (req, res) => {
     });
   }
 };
+
+const getLocationByCoordinates = async (req, res) => {
+  const { latitude, longitude, city } = req.query;
+  try {
+    var config = {
+      method: "get",
+      url: `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${process.env.GMAP_API_KEY}`,
+      headers: {},
+    };
+
+    const response = await axios(config);
+    console.log(response.data.results, "fsffsfsfsfs")
+
+    if (response.data.results.length > 0) {
+      const address = response.data.results[0].formatted_address;
+      res.status(200).json(address);
+    } else {
+      res.status(400).json({
+        message: "No result find",
+      });
+      // return null; // No results found
+    }
+  } catch (err) {
+    res.status(400).json({
+      message: err.message,
+    });
+  }
+};
+
 module.exports = {
   suggestionAutocomplete,
   nearbyLocalities,
   getCoordinatesByLocation,
+  getLocationByCoordinates
 };

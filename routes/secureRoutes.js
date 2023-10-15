@@ -51,11 +51,15 @@ const {
   checkUserVerified,
   checkUserBlocked,
 } = require("../middleware/verified-middleware");
+const { getLocationByCoordinates } = require("../controllers/Googleapiscontrolller");
 
 const router = Router();
 
-router.use(userAuth);
-router.use(checkUserBlocked);
+router.post("/getLocation", getLocationByCoordinates)
+// router.use(userAuth);
+// router.use(checkUserBlocked);
+
+//property
 
 // houses
 router.post("/newProperty/house/create", checkUserVerified, newHouseProperty);
