@@ -54,6 +54,7 @@ const {
 
 const router = Router();
 
+//checks
 router.use(userAuth);
 router.use(checkUserBlocked);
 

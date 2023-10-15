@@ -1,6 +1,7 @@
 const { Coordinates } = require("../constants");
 const db = require("../db");
 const { houses, houseFacilities } = require("../db/tables");
+const { getCoordinatesByLocation } = require("./Googleapiscontrolller");
 const MAX_COUNT = 100;
 
 const getHouse = async (req, res) => {
@@ -451,6 +452,7 @@ const updatePgProperty = async (req, res) => {
   try {
     const userId = req.user.id;
     const { pgId } = req.params;
+    console.log(pgId);
 
     const { rows } = await db.query("SELECT * FROM pgs WHERE id = $1", [pgId]);
 
@@ -496,7 +498,14 @@ const updatePgProperty = async (req, res) => {
       food = null,
       rank = null,
       modified_at,
+      latitude = null,
+      longitude = null,
     } = req.body;
+    let coordinates;
+    if (locality) {
+      coordinates = await getCoordinatesByLocation(locality);
+      console.log(coordinates);
+    }
 
     const pgObject = {
       pg_name,
@@ -532,8 +541,10 @@ const updatePgProperty = async (req, res) => {
       food,
       rank,
       modified_at: new Date(Date.now()),
+      latitude: coordinates[0],
+      longitude: coordinates[1],
     };
-
+    console.log(pgObject);
     const pgArrDBKeys = [
       "pg_name",
       "description",
@@ -562,6 +573,8 @@ const updatePgProperty = async (req, res) => {
       "gender",
       "food",
       "rank",
+      "latitude",
+      "longitude",
     ];
 
     const pgArr = Object.entries(pgObject)
