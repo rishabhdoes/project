@@ -80,7 +80,7 @@ app.post("/payment", async (req, res) => {
 
     // Redirect to CCAvenue payment gateway with encrypted data
     res.redirect(
-      `https://test.ccavenue.com/transaction/transaction.do?command=initiateTransaction&encRequest=${encRequest}&access_code=${accessCode}&currency=${currency}`
+      `https://test.ccavenue.com/transaction/transaction.do?command=initiateTransaction&encRequest=${encRequest}`
     );
   } catch (error) {
     console.error("Error processing payment:", error);
