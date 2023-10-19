@@ -52,6 +52,7 @@ app.post("/payment", async (req, res) => {
 
     // Generate encryption keys and encrypt payment data
     const workingKey = "720702AAB0A040750D93E088C061049E"; // Replace with your actual working key
+    const accessCode = "AVYV17KJ86AH05VYHA";
     const md5 = crypto.createHash("md5").update(workingKey).digest();
     const keyBase64 = Buffer.from(md5).toString("base64");
     var ivBase64 = Buffer.from([
@@ -79,7 +80,7 @@ app.post("/payment", async (req, res) => {
 
     // Redirect to CCAvenue payment gateway with encrypted data
     res.redirect(
-      `https://test.ccavenue.com/transaction/transaction.do?command=initiateTransaction&encRequest=${encRequest}`
+      `https://test.ccavenue.com/transaction/transaction.do?command=initiateTransaction&encRequest=${encRequest}&access_code=${accessCode}&currency=${currency}`
     );
   } catch (error) {
     console.error("Error processing payment:", error);
