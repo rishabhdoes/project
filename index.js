@@ -71,6 +71,7 @@ app.post("/payment", async (req, res) => {
       cancel_url,
       language,
     };
+    console.log("currency:", currency)
 
     const encRequest = ccav.encrypt(
       JSON.stringify(requestData),
@@ -79,9 +80,11 @@ app.post("/payment", async (req, res) => {
     );
 
     // Redirect to CCAvenue payment gateway with encrypted data
-    res.redirect(
-      `https://test.ccavenue.com/transaction/transaction.do?command=initiateTransaction&encRequest=${encRequest}&access_code=${accessCode}`
-    );
+    // res.redirect(
+    //   `https://instagram.com`
+    //   // `https://test.ccavenue.com/transaction/transaction.do?command=initiateTransaction&encRequest=${encRequest}&access_code=${accessCode}`
+    // );
+    res.status(200).json({ url: `https://test.ccavenue.com/transaction/transaction.do?command=initiateTransaction&encRequest=${encRequest}&access_code=${accessCode}&currency=${currency}` });
   } catch (error) {
     console.error("Error processing payment:", error);
     res.status(500).json({ error: "Internal Server Error" });
