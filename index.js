@@ -84,7 +84,7 @@ app.post("/payment", async (req, res) => {
     //   `https://instagram.com`
     //   // `https://test.ccavenue.com/transaction/transaction.do?command=initiateTransaction&encRequest=${encRequest}&access_code=${accessCode}`
     // );
-    res.status(200).json({ url: `https://test.ccavenue.com/transaction/transaction.do?command=initiateTransaction&encRequest=${encRequest}&access_code=${accessCode}&currency=${currency}` });
+    res.status(200).json({ url: `https://test.ccavenue.com/transaction/transaction.do?command=initiateTransaction&encRequest=${encRequest}&access_code=${accessCode}` });
   } catch (error) {
     console.error("Error processing payment:", error);
     res.status(500).json({ error: "Internal Server Error" });
