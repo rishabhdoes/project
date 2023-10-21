@@ -121,7 +121,7 @@ app.post("/payment", async (request, response) => {
   if (data){
     encRequest = ccav.encrypt(body, keyBase64, ivBase64);
     formbody =
-      '<form id="nonseamless" method="post" name="redirect" action="https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction"/> <input type="hidden" id="encRequest" name="encRequest" value="' +
+      '<form id="nonseamless" method="post" name="redirect" action="https://test.ccavenue.com/transaction/transaction.do?command=initiateTransaction"/> <input type="hidden" id="encRequest" name="encRequest" value="' +
       encRequest +
       '"><input type="hidden" name="access_code" id="access_code" value="' +
       accessCode +
