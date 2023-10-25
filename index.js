@@ -113,7 +113,7 @@ app.post("/payment", async (request, response) => {
   console.log("data:");
   if (data){
     console.log("data:", data);
-    body += data;
+    body += JSON.stringify(data);
     
   };
 
