@@ -116,19 +116,23 @@ app.post("/payment", async (request, response) => {
     body += JSON.stringify(data);
     
   };
+  const jsonData = JSON.parse(body);
+  const queryString = Object.keys(jsonData).map(key => {
+    if (typeof jsonData[key] === 'string') {
+        return `${key}=${encodeURIComponent(jsonData[key])}`;
+    }
+    return `${key}=${jsonData[key]}`;
+}).join('&');
 
   // request.on("end", function () {
   if (data){
-    encRequest = ccav.encrypt(body, keyBase64, ivBase64);
-    let decRequest = ccav.decrypt(encRequest, keyBase64, ivBase64);
-    console.log("encRequest:", encRequest)
-    console.log(decRequest)
+    encRequest = ccav.encrypt(queryString, keyBase64, ivBase64);
     formbody =
-      '<form id="nonseamless" method="post" name="redirect" action="https://test.ccavenue.com/transaction/transaction.do?command=initiateTransaction"/> <input type="hidden" id="encRequest" name="encRequest" value="' +
+      `<form id="nonseamless" method="post" name="redirect" action="https://test.ccavenue.com/transaction/transaction.do?command=initiateTransaction&encRequest=${encRequest}&access_code=${accessCode}"/> <input type="hidden" id="encRequest" name="encRequest" value="' +
       encRequest +
       '"><input type="hidden" name="access_code" id="access_code" value="' +
       accessCode +
-      '"><input type="hidden" name="currency" id="currency" value="INR"><script language="javascript">document.redirect.submit();</script></form>';
+      '"><input type="hidden" name="currency" id="currency" value="INR"><script language="javascript">document.redirect.submit();</script></form>`;
     // response.writeHeader(200, { "Content-Type": "text/html" });
     // response.write(formbody);
     const script = '<script language="javascript">console.log("Before form submission"); document.getElementById("nonseamless").submit(); console.log("After form submission");</script>';
