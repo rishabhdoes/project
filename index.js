@@ -153,6 +153,9 @@ app.post("/payment", async (request, response) => {
 app.post("/", (req, res) => {
   res.redirect("https://homewale.com");
 });
+app.get("/", (req, res) => {
+  res.redirect("https://homewale.com");
+});
 
 // Error Handling middlewares
 app.use(notFound);
