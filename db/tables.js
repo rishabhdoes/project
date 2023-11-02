@@ -253,6 +253,20 @@ const queries = {
       END;
       $$ LANGUAGE plpgsql;
     `,
+
+  payments: `
+    CREATE TABLE payments (
+      id UUID DEFAULT uuid_generate_v4(),
+      user_id UUID NOT NULL,
+      order_type varchar(50),
+      order_id varchar(100),
+      payment_date DATE NOT NULL,
+      amount DECIMAL(10, 2) NOT NULL,
+      payment_method VARCHAR(50) NOT NULL,
+      status VARCHAR(20) NOT NULL,
+      transaction_id VARCHAR(100)
+     
+  )`,
 };
 
 module.exports = queries;

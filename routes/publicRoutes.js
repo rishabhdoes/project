@@ -20,6 +20,7 @@ const {
 const {
   suggestionAutocomplete,
   nearbyLocalities,
+  getLocationByCoordinates,
 } = require("../controllers/Googleapiscontrolller");
 const {
   listPropertiesOnSearch,
@@ -59,4 +60,7 @@ router.get("/getProperty/:id", getPropertyData);
 router.get("/getPropertyPg/:id", getPropertyDataForPg);
 
 router.get(`/verifyEmail/:user_id/:email/:token`, emailExists, verifyEmail);
+
+router.get("/getLocationByCoordinates", getLocationByCoordinates);
+
 module.exports = router;
