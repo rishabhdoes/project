@@ -980,23 +980,21 @@ const listPropertiesOnSearch = async (req, res) => {
       const queryForPg = `SELECT  pgs.id as pgs_id,*,pgfacilities.id as pgfacilities_id
       FROM pgs
       LEFT JOIN pgfacilities ON pgs.id = pgfacilities.pg_id
-      WHERE isactive='true'
-      AND isverified='true'
+      WHERE is_active=true
+      AND is_verified=true
       AND  city ILIKE $2
         AND locality ILIKE ANY (
           SELECT '%' || pattern || '%'
           FROM unnest($1::text[]) AS pattern
         )
-        AND (room_type = ANY ($3) OR $3 IS NULL)
+        
       AND (preferred_tenants = ANY ($4) OR $4 IS NULL)
-      AND (rent >= $5 OR $5 IS NULL)
-      AND (rent <= $6 OR $6 IS NULL)
-      AND (available_from <= $7 OR $7 IS NULL)
-      AND (available_from >= $8 OR $8 IS NULL)
+
+      
       AND (parking = ANY ($9) OR $9 IS NULL)
-      AND (breakfast='true'  OR $10 IS NULL)
-      AND (lunch='true'  OR $11 IS NULL)
-      AND (dinner='true'  OR $12 IS NULL)
+      AND (breakfast=true  OR $10 IS NULL)
+      AND (lunch=true  OR $11 IS NULL)
+      AND (dinner=true  OR $12 IS NULL)
       ORDER BY (
         SELECT COUNT(DISTINCT word)
         FROM regexp_split_to_table(locality, E'\\s+') AS word
@@ -1011,23 +1009,20 @@ const listPropertiesOnSearch = async (req, res) => {
       const queryForpgCount = `
       SELECT COUNT(*) AS total_count
       FROM pgs
-      WHERE isactive='true'
-      AND isverified='true'                                                                                                                                                                                             
+      WHERE is_active='true'
+      AND is_verified='true'                                                                                                                                                                                             
       AND  city ILIKE $2
         AND locality ILIKE ANY (
           SELECT '%' || pattern || '%'
           FROM unnest($1::text[]) AS pattern
         ); 
-        AND (room_type = ANY ($3) OR $3 IS NULL)
+
       AND (preferred_tenants = ANY ($4) OR $4 IS NULL)
-      AND (rent >= $5 OR $5 IS NULL)
-      AND (rent <= $6 OR $6 IS NULL)
-      AND (available_from <= $7 OR $7 IS NULL)
-      AND (available_from >= $8 OR $8 IS NULL)
+
       AND (parking = ANY ($9) OR $9 IS NULL)
-      AND (breakfast='true'  OR $10 IS NULL)
-      AND (lunch='true'  OR $11 IS NULL)
-      AND (dinner='true'  OR $12 IS NULL)
+      AND (breakfast=true  OR $10 IS NULL)
+      AND (lunch=true  OR $11 IS NULL)
+      AND (dinner=true  OR $12 IS NULL)
         `;
 
       const pgsData = await db.query(queryForPg, [

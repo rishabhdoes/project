@@ -128,7 +128,7 @@ router.post("/payment", async (request, response) => {
     encRequest = "",
     formbody = "";
   const { data } = request.body;
-  console.log("data:", data);
+
 
   //Generate Md5 hash for the key and then convert in base64 string
   var md5 = crypto.createHash("md5").update(workingKey).digest();
@@ -140,9 +140,9 @@ router.post("/payment", async (request, response) => {
     0x0c, 0x0d, 0x0e, 0x0f,
   ]).toString("base64");
 
-  console.log("data:");
+
   if (data) {
-    console.log("data:", data);
+
     body += JSON.stringify(data);
   }
   const jsonData = JSON.parse(body);
