@@ -157,7 +157,7 @@ const queries = {
     lockin_period VARCHAR (255),
     preferred_tenants VARCHAR (255) DEFAULT 'any',
     gender VARCHAR (255) DEFAULT 'any',
-    food BOOLEAN DEFAULT FALSE NOT NULL,
+    food_available BOOLEAN DEFAULT FALSE NOT NULL,
     rank INTEGER DEFAULT 0,
     created_at timestamp DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamp DEFAULT CURRENT_TIMESTAMP,

@@ -13,6 +13,7 @@ app.use(cookieParser());
 app.use(
   cors({ origin: [CLIENT_URL, "https://homewale.com"], credentials: true })
 );
+
 var http = require("http"),
   fs = require("fs"),
   ccav = require("./ccavutil.js"),
@@ -86,6 +87,7 @@ app.get("/", async (req, res) => {
 //     res.status(500).json({ error: "Internal Server Error" });
 //   }
 // });
+
 app.post("/payment", async (request, response) => {
   var body = "",
     workingKey = "720702AAB0A040750D93E088C061049E", //Put in the 32-Bit key shared by CCAvenues.
@@ -103,7 +105,6 @@ app.post("/payment", async (request, response) => {
     0x0c, 0x0d, 0x0e, 0x0f,
   ]).toString("base64");
 
-  console.log("data:");
   request.on("data", function (data) {
     console.log("data:", data);
     body += data;
@@ -121,7 +122,8 @@ app.post("/payment", async (request, response) => {
     response.write(formbody);
     response.end();
   });
-  return;
+
+  return response.json("failed!!!!!!!!!!!!");
 });
 
 // Error Handling middlewares

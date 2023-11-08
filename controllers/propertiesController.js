@@ -122,6 +122,7 @@ const newPgProperty = async (req, res) => {
     );
 
     const pg = rows[0];
+
     res.status(201).json({ message: "new pg created", pg });
   } catch (error) {
     res.status(400).json({
@@ -175,6 +176,7 @@ const updateHouseProperty = async (req, res) => {
       houseNo = null,
       pincode = null,
       address = null,
+      postPropertyPageNo: post_property_page_no = 0,
     } = req.body;
 
     const houseObj = {
@@ -216,6 +218,7 @@ const updateHouseProperty = async (req, res) => {
       houseNo,
       pincode,
       address,
+      post_property_page_no,
     };
 
     // default array that contains all columns that exist in houses db
@@ -260,6 +263,7 @@ const updateHouseProperty = async (req, res) => {
       "houseNo",
       "pincode",
       "address",
+      "post_property_page_no",
     ];
 
     // check whether values are null or not
@@ -493,8 +497,9 @@ const updatePgProperty = async (req, res) => {
       lockin_period = null,
       preferred_tenants = null,
       gender = null,
-      food = null,
+      food_available = null,
       rank = null,
+      postPropertyPageNo: post_property_page_no = 0,
       modified_at,
     } = req.body;
 
@@ -529,8 +534,9 @@ const updatePgProperty = async (req, res) => {
       lockin_period,
       preferred_tenants,
       gender,
-      food,
+      food_available,
       rank,
+      post_property_page_no,
       modified_at: new Date(Date.now()),
     };
 
@@ -560,8 +566,9 @@ const updatePgProperty = async (req, res) => {
       "lockin_period",
       "preferred_tenants",
       "gender",
-      "food",
+      "food_available",
       "rank",
+      "post_property_page_no",
     ];
 
     const pgArr = Object.entries(pgObject)
@@ -584,9 +591,6 @@ const updatePgProperty = async (req, res) => {
     const {
       ac = null,
       attached_bathroom = null,
-      breakfast = null,
-      lunch = null,
-      dinner = null,
       fridge = null,
       water_filter = null,
       washing_machine = null,
@@ -621,9 +625,6 @@ const updatePgProperty = async (req, res) => {
     const pgFacilitiesObj = {
       ac,
       attached_bathroom,
-      breakfast,
-      lunch,
-      dinner,
       fridge,
       water_filter,
       washing_machine,
@@ -658,9 +659,6 @@ const updatePgProperty = async (req, res) => {
     const pgFacilitiesDBKeys = [
       "ac",
       "attached_bathroom",
-      "breakfast",
-      "lunch",
-      "dinner",
       "fridge",
       "water_filter",
       "washing_machine",
@@ -747,10 +745,26 @@ const getMyListings = async (req, res) => {
     let listings;
 
     if (propertyType === "pgs") {
-      listings = await db.query(
-        "SELECT * FROM pgs LEFT OUTER JOIN pgfacilities ON pgs.id = pgfacilities.pg_id WHERE pgs.owner_id = $1",
-        [userId]
+      listings = await db.query("SELECT * FROM pgs WHERE pgs.owner_id = $1", [
+        userId,
+      ]);
+
+      let listingsWithImages = await Promise.all(
+        listings.rows.map(async (pg) => {
+          const fetchData = async () => {
+            const { rows } = await db.query(
+              "SELECT media_url, id FROM propertyMediaTable WHERE pg_id = $1",
+              [pg.id]
+            );
+            return rows;
+          };
+
+          let newData = { ...pg, images: await fetchData() };
+          return newData;
+        })
       );
+
+      res.status(200).json({ listings: listingsWithImages });
     } else {
       listings = await db.query(
         "SELECT * FROM houses WHERE houses.owner_id = $1",

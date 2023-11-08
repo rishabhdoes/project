@@ -38,8 +38,12 @@ const {
 const {
   handleHouseImageUpload,
   handleDescription,
-  handleDeleteImage,
-  getImages,
+  handleHouseDeleteImage,
+  getHouseImages,
+
+  getPgImages,
+  handlePgDeleteImage,
+  handlePgImageUpload,
 } = require("../controllers/handleImage");
 
 const {
@@ -51,6 +55,8 @@ const {
   checkUserVerified,
   checkUserBlocked,
 } = require("../middleware/verified-middleware");
+
+const { isPgOwner, pgValidation } = require("../middleware/pg-middleware");
 
 const router = Router();
 
@@ -65,17 +71,17 @@ router.post(
   [isHouseOwner, housesValidation],
   updateHouseProperty
 );
-
 router.get("/gethouse", getHouse);
-router.get("/getpg", getPg);
 
 // pgs
 router.post("/newProperty/pg/create", checkUserVerified, newPgProperty);
 router.post(
   "/newProperty/pg/update/:pgId",
   checkUserVerified,
+  [isPgOwner],
   updatePgProperty
 );
+router.get("/getpg", getPg);
 
 // fetch all user listings
 router.get("/user/me", getUser);
@@ -86,7 +92,9 @@ router.get("/user/getAllPropertiesContacted", getAllPropertiesContacted);
 router.post("/user/property/shortlist", checkUserVerified, shortlistProperty);
 router.get("/user/myshortlists", checkUserVerified, showShortlists);
 
-// media
+// media - houses
+
+// POST IMAGE
 router.post(
   "/newProperty/house/uploadImage/:houseId",
   checkUserVerified,
@@ -94,17 +102,49 @@ router.post(
   upload.array("image"),
   handleHouseImageUpload
 );
-router.get("/getHouseImage/:houseId", getImages);
+
+// GET IMAGE
+router.get("/getHouseImage/:houseId", getHouseImages);
+
+// UPDATE IMAGE DETAIL
 router.put(
   "/house/uploadImage/change-description/:imageId",
   checkUserVerified,
   handleDescription
 );
+
+// DELETE IMAGE
 router.delete(
   "/house/deleteImage/:imageId",
   checkUserVerified,
-  handleDeleteImage
+  handleHouseDeleteImage
 );
+
+// media - pgs
+
+// UPLOAD PG IMAGE
+router.post(
+  "/newProperty/pg/uploadImage/:pgId",
+  checkUserVerified,
+  isPgOwner,
+  upload.array("image"),
+  handlePgImageUpload
+);
+// GET PG IMAGE
+router.get("/getPgImage/:pgId", getPgImages);
+// UPDATE IMAGE DETAIL
+router.put(
+  "/pg/uploadImage/change-description/:imageId",
+  checkUserVerified,
+  handleDescription
+);
+// DELETE PG IMAGE
+router.delete(
+  "/pg/deleteImage/:imageId",
+  checkUserVerified,
+  handlePgDeleteImage
+);
+
 // profile
 router.post("/updateProfile", updateProfile);
 router.post("/generateVerificationEmail", generateVerificationEmail);
