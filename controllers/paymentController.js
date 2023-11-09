@@ -97,7 +97,7 @@ const paymentStatus = async (req, res) => {
     ]).toString("base64");
     const decryptedResp = ccav.decrypt(encResp, keyBase64, ivBase64);
 
-    const jsonResponse = parseDecryptedReq(decryptedResp);
+    const jsonResponse = JSON.parse(parseDecryptedReq(decryptedResp));
     const jsonParam = encodeURIComponent(JSON.stringify(jsonResponse));
 
     res.redirect(`${CLIENT_URL}/payment/status?jsonData=${jsonParam}`);
