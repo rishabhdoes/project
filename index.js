@@ -21,11 +21,7 @@ app.use(
     credentials: true,
   })
 );
-var http = require("http"),
-  fs = require("fs"),
-  ccav = require("./ccavutil.js"),
-  crypto = require("crypto"),
-  qs = require("querystring");
+
 // app.use(cors());
 app.use(passport.initialize());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -43,10 +39,12 @@ app.use("/private/api", privateRoutes);
 app.use(express.json());
 
 app.post("/", (req, res) => {
-  res.redirect("https://homewale.com");
+  console.log("req:", req.body)
+  console.log("CLIENT_URL:", CLIENT_URL)
+  res.redirect(CLIENT_URL);
 });
 app.get("/", (req, res) => {
-  res.redirect("https://homewale.com");
+  res.redirect(CLIENT_URL);
 });
 
 // Error Handling middlewares
