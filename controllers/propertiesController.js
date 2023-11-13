@@ -1184,9 +1184,11 @@ const showShortlists = async (req, res) => {
       userId,
     ]);
 
+    if (rows.length === 0) return res.status(404).json("User not found");
+
     let shortlists = [];
 
-    if (propertyType === "houses") {
+    if (propertyType === "house") {
       shortlists = rows[0].house_shortlists;
 
       const data = await Promise.all(
@@ -1210,7 +1212,7 @@ const showShortlists = async (req, res) => {
       );
 
       return res.status(200).json({ data });
-    } else if (propertyType === "pgs") {
+    } else if (propertyType === "pg") {
       shortlists = rows[0].pg_shortlists;
 
       const data = await Promise.all(
