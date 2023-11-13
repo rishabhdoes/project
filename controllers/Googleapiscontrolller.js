@@ -73,6 +73,35 @@ const getCoordinatesByLocation = async (place) => {
     return null;
   }
 };
+
+const getLocationByCoordinates = async (req, res) => {
+  try {
+    const { latitude, longitude } = req.query;
+
+    const config = {
+      method: "get",
+      url: `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${process.env.GMAP_API_KEY}`,
+      headers: {},
+    };
+
+    const response = await axios(config);
+    
+    if (response.data.status === "OK" && response.data.results.length > 0) {
+      //console.log(response.data);
+
+      const address = response.data.results.map((place) => {
+        return place.formatted_address;
+      });
+      res.json({ address });
+    } else {
+      return [];
+    }
+  } catch (error) {
+    console.log(error)
+    return [];
+  }
+};
+
 const nearbyLocalities = async (req, res) => {
   try {
     const { text } = req.query;
@@ -131,4 +160,5 @@ module.exports = {
   suggestionAutocomplete,
   nearbyLocalities,
   getCoordinatesByLocation,
+  getLocationByCoordinates,
 };

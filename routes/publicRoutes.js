@@ -20,12 +20,15 @@ const {
 const {
   suggestionAutocomplete,
   nearbyLocalities,
+  getLocationByCoordinates,
 } = require("../controllers/Googleapiscontrolller");
 const {
   listPropertiesOnSearch,
   getPropertyData,
+  getPropertyDataForPg,
 } = require("../controllers/propertiesController");
 const { verifyEmail } = require("../controllers/profileController");
+const { paymentStatus } = require("../controllers/paymentController");
 
 const router = Router();
 
@@ -55,5 +58,13 @@ router.get("/nearbyLocalities", nearbyLocalities);
 
 router.get("/getProperty/:id", getPropertyData);
 
+router.get("/getPropertyPg/:id", getPropertyDataForPg);
+
 router.get(`/verifyEmail/:user_id/:email/:token`, emailExists, verifyEmail);
+
+router.get("/getLocationByCoordinates", getLocationByCoordinates);
+
+router.post("/payment-status", paymentStatus);
+router.get("/payment-status", paymentStatus);
+
 module.exports = router;
