@@ -836,6 +836,7 @@ const listPropertiesOnSearch = async (req, res) => {
       parking = undefined,
       property_with_image = undefined,
       property_type = undefined,
+      gender = undefined
     } = filters || {};
 
     let available_date_less_than = undefined;
@@ -998,26 +999,17 @@ const listPropertiesOnSearch = async (req, res) => {
       // mergedData contains the combined information from house and media tables
       // Rest of your code
     } else {
-      const queryForPg = `SELECT  pgs.id as pgs_id,*,pgfacilities.id as pgfacilities_id
+      const queryForPg = `SELECT pgs.id as pgs_id,*, pgfacilities.id as pgfacilities_id
       FROM pgs
       LEFT JOIN pgfacilities ON pgs.id = pgfacilities.pg_id
       WHERE is_active='true'
       AND is_verified='true'
-      AND  city ILIKE $2
+      AND city ILIKE $2
         AND locality ILIKE ANY (
           SELECT '%' || pattern || '%'
           FROM unnest($1::text[]) AS pattern
-        )
-        AND (room_type = ANY ($3) OR $3 IS NULL)
-      AND (preferred_tenants = ANY ($4) OR $4 IS NULL)
-      AND (rent >= $5 OR $5 IS NULL)
-      AND (rent <= $6 OR $6 IS NULL)
-      AND (available_from <= $7 OR $7 IS NULL)
-      AND (available_from >= $8 OR $8 IS NULL)
-      AND (parking = ANY ($9) OR $9 IS NULL)
-      AND (breakfast='true'  OR $10 IS NULL)
-      AND (lunch='true'  OR $11 IS NULL)
-      AND (dinner='true'  OR $12 IS NULL)
+        )AND (gender = ANY ($5) OR $5 IS NULL)
+        AND (preferred_tenants = ANY ($6) OR $6 IS NULL)
       ORDER BY (
         SELECT COUNT(DISTINCT word)
         FROM regexp_split_to_table(locality, E'\\s+') AS word
@@ -1032,36 +1024,85 @@ const listPropertiesOnSearch = async (req, res) => {
       const queryForpgCount = `
       SELECT COUNT(*) AS total_count
       FROM pgs
-      WHERE is_active='true'
-      AND is_verified='true'                                                                                                                                                                                             
-      AND  city ILIKE $2
+      LEFT JOIN pgfacilities ON pgs.id = pgfacilities.pg_id
+      WHERE 
+      is_active='true'
+      AND is_verified='true'
+      AND city ILIKE $2
         AND locality ILIKE ANY (
           SELECT '%' || pattern || '%'
           FROM unnest($1::text[]) AS pattern
-        ); 
-        AND (room_type = ANY ($3) OR $3 IS NULL)
-      AND (preferred_tenants = ANY ($4) OR $4 IS NULL)
-      AND (rent >= $5 OR $5 IS NULL)
-      AND (rent <= $6 OR $6 IS NULL)
-      AND (available_from <= $7 OR $7 IS NULL)
-      AND (available_from >= $8 OR $8 IS NULL)
-      AND (parking = ANY ($9) OR $9 IS NULL)
-      AND (breakfast='true'  OR $10 IS NULL)
-      AND (lunch='true'  OR $11 IS NULL)
-      AND (dinner='true'  OR $12 IS NULL)
+        )AND (gender = ANY ($3) OR $3 IS NULL)
+        AND (preferred_tenants = ANY ($4) OR $4 IS NULL)
+        AND(media_count>=$5 OR $5 IS NULL)
         `;
 
-      const pgsData = await db.query(queryForPg, [
+      const pgData = await db.query(queryForPg, [
         allKeywords,
         city,
         10 * (pgNo - 1),
         10,
+        gender,
+        preferred_tenants,
       ]);
-      const pgsCount = await db.query(queryForpgCount, [allKeywords, city]);
+      const pgsCount = await db.query(queryForpgCount, [
+        allKeywords,
+        city,
+        gender,
+        preferred_tenants,
+        property_with_image,
+      ]);
 
-      return res
-        .status(200)
-        .json({ allpgs: pgsData.rows, totalCount: pgsCount.rows[0] });
+      // return res
+      //   .status(200)
+      //   .json({ allpgs: pgData?.rows, totalCount: pgsCount?.rows[0]?.total_count });
+      const pgIds = pgData.rows.map((row) => row.pgs_id);
+
+      const queryForMedia = `
+        SELECT pg_id, array_agg(DISTINCT filename) AS file_name,array_agg(DISTINCT media_url) AS media_url
+        FROM propertymediatable
+        WHERE pg_id = ANY ($1)
+        GROUP BY pg_id;
+      `;
+  
+        let mediaData = await db.query(queryForMedia, [pgIds]);
+  
+        const newMedia = mediaData.rows.map((mp) => {
+          const mediaFiles = [];
+  
+          for (let i = 0; i < mp.file_name.length; i++) {
+            mediaFiles.push({
+              file_name: mp.file_name[i],
+              media_url: mp.media_url[i],
+            });
+          }
+  
+          return { pg_id: mp.pg_id, images: mediaFiles };
+        });
+  
+        //console.log(newMedia);
+  
+        const mergedData = pgData.rows.map((pg) => {
+          const media = newMedia.find(
+            (item) => item.pg_id === pg.pgs_id
+          );
+          return {
+            ...pg,
+            ...media,
+          };
+        });
+  
+        let pgsData = mergedData;
+        if (property_with_image) {
+          pgsData = mergedData.filter((data) => {
+            return data.file_name.length > 0;
+          });
+        }
+  
+        return res.status(200).json({
+          totalCount: pgsCount?.rows[0]?.total_count,
+          allhouses: pgsData,
+        });
     }
   } catch (e) {
     //.log(e);
