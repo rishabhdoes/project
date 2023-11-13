@@ -1,6 +1,11 @@
 const { Router } = require("express");
 const { userAuth } = require("../middleware/auth-middleware");
 
+var http = require("http"),
+  fs = require("fs"),
+  ccav = require("../ccavutil.js"),
+  crypto = require("crypto"),
+  qs = require("querystring");
 // image upload
 const multer = require("multer");
 const { storage } = require("../cloudinary");
@@ -55,11 +60,13 @@ const {
   checkUserVerified,
   checkUserBlocked,
 } = require("../middleware/verified-middleware");
+const { paymentInitiation } = require("../controllers/paymentController.js");
 
 const { isPgOwner, pgValidation } = require("../middleware/pg-middleware");
 
 const router = Router();
 
+//checks
 router.use(userAuth);
 router.use(checkUserBlocked);
 
@@ -154,6 +161,9 @@ router.post(
   checkUserVerified,
   getOwnerDetails
 );
+
+router.post("/payment", paymentInitiation);
+
 
 router.get("/logout", logout);
 
