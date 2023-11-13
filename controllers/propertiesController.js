@@ -1,6 +1,7 @@
 const { Coordinates } = require("../constants");
 const db = require("../db");
 const { houses, houseFacilities } = require("../db/tables");
+const { getCoordinatesByLocation } = require("./Googleapiscontrolller");
 const MAX_COUNT = 100;
 
 const getHouse = async (req, res) => {
@@ -122,7 +123,6 @@ const newPgProperty = async (req, res) => {
     );
 
     const pg = rows[0];
-
     res.status(201).json({ message: "new pg created", pg });
   } catch (error) {
     res.status(400).json({
@@ -501,6 +501,8 @@ const updatePgProperty = async (req, res) => {
       rank = null,
       postPropertyPageNo: post_property_page_no = 0,
       modified_at,
+      latitude = null,
+      longitude = null,
     } = req.body;
 
     const pgObject = {
@@ -539,6 +541,7 @@ const updatePgProperty = async (req, res) => {
       post_property_page_no,
       modified_at: new Date(Date.now()),
     };
+    console.log(pg);
 
     const pgArrDBKeys = [
       "pg_name",
@@ -591,6 +594,9 @@ const updatePgProperty = async (req, res) => {
     const {
       ac = null,
       attached_bathroom = null,
+      breakfast = null,
+      lunch = null,
+      dinner = null,
       fridge = null,
       water_filter = null,
       washing_machine = null,
@@ -625,6 +631,9 @@ const updatePgProperty = async (req, res) => {
     const pgFacilitiesObj = {
       ac,
       attached_bathroom,
+      breakfast,
+      lunch,
+      dinner,
       fridge,
       water_filter,
       washing_machine,
@@ -659,6 +668,9 @@ const updatePgProperty = async (req, res) => {
     const pgFacilitiesDBKeys = [
       "ac",
       "attached_bathroom",
+      "breakfast",
+      "lunch",
+      "dinner",
       "fridge",
       "water_filter",
       "washing_machine",
@@ -744,7 +756,7 @@ const getMyListings = async (req, res) => {
 
     let listings;
 
-    if (propertyType === "pgs") {
+    if (propertyType === "pg") {
       listings = await db.query("SELECT * FROM pgs WHERE pgs.owner_id = $1", [
         userId,
       ]);
@@ -869,7 +881,7 @@ const listPropertiesOnSearch = async (req, res) => {
     LIMIT $14;
   `;
 
-    if (propertyType == "House" || propertyType == "house") {
+    if (propertyType === "House" || propertyType === "house") {
       const houseData = await db.query(queryForHouse, [
         allKeywords,
         city,
@@ -981,8 +993,8 @@ const listPropertiesOnSearch = async (req, res) => {
       const queryForPg = `SELECT  pgs.id as pgs_id,*,pgfacilities.id as pgfacilities_id
       FROM pgs
       LEFT JOIN pgfacilities ON pgs.id = pgfacilities.pg_id
-      WHERE isactive='true'
-      AND isverified='true'
+      WHERE is_active='true'
+      AND is_verified='true'
       AND  city ILIKE $2
         AND locality ILIKE ANY (
           SELECT '%' || pattern || '%'
@@ -1012,8 +1024,8 @@ const listPropertiesOnSearch = async (req, res) => {
       const queryForpgCount = `
       SELECT COUNT(*) AS total_count
       FROM pgs
-      WHERE isactive='true'
-      AND isverified='true'                                                                                                                                                                                             
+      WHERE is_active='true'
+      AND is_verified='true'                                                                                                                                                                                             
       AND  city ILIKE $2
         AND locality ILIKE ANY (
           SELECT '%' || pattern || '%'
@@ -1256,6 +1268,32 @@ const getPropertyData = async (req, res) => {
   }
 };
 
+const getPropertyDataForPg = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) throw new Error("id invalid");
+
+    const query = `SELECT pgs.id as pgs_id,*,pgfacilities.id as pgfacilities_id 
+   FROM pgs
+   LEFT JOIN pgfacilities
+   on pgs.id=pgfacilities.pg_id
+   where pgs.id=$1
+`;
+    const { rows } = await db.query(query, [id]);
+
+    const data = await db.query(
+      "SELECT media_url, description FROM propertyMediaTable WHERE pg_id = $1",
+      [id]
+    );
+    const media = data.rows;
+
+    res.status(200).json({ ...rows[0], media });
+  } catch (e) {
+    res.status(401).json({ message: "not able to find property" });
+  }
+};
+
 const getUser = async (req, res) => {
   const userId = req.user.id;
 
@@ -1278,11 +1316,12 @@ const getUser = async (req, res) => {
 
 const getOwnerDetails = async (req, res) => {
   try {
-    const { houseId = null, pgId = null } = req.body;
-    if (houseId) {
+    const { propertyId = null, propertyType = null } = req.body;
+
+    if (propertyType === "house") {
       const { rows, rowCount } = await db.query(
         "SELECT * FROM houses WHERE id = $1",
-        [houseId]
+        [propertyId]
       );
 
       if (rowCount <= 0) {
@@ -1346,10 +1385,10 @@ const getOwnerDetails = async (req, res) => {
           }
         }
       }
-    } else {
+    } else if (propertyType === "pg") {
       const { rows, rowCount } = await db.query(
         "SELECT * FROM pgs WHERE id = $1",
-        [pgId]
+        [propertyId]
       );
 
       if (rowCount <= 0) {
@@ -1404,7 +1443,6 @@ const getOwnerDetails = async (req, res) => {
       }
     }
   } catch (err) {
-    m;
     res.status(400).json(err);
   }
 };
@@ -1620,4 +1658,5 @@ module.exports = {
   getAdminPropertyList,
   togglePropertyBlockedStatus,
   getAllPropertiesContacted,
+  getPropertyDataForPg,
 };
