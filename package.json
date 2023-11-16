@@ -25,6 +25,7 @@
     "cloudinary": "^1.37.0",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
+    "crypto": "^1.0.1",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "express-validator": "^7.0.1",
@@ -35,6 +36,7 @@
     "nodemon": "^2.0.22",
     "passport": "^0.6.0",
     "passport-jwt": "^4.0.1",
-    "pg": "^8.10.0"
+    "pg": "^8.10.0",
+    "querystring": "^0.2.1"
   }
 }

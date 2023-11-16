@@ -76,7 +76,7 @@ const getCoordinatesByLocation = async (place) => {
 
 const getLocationByCoordinates = async (req, res) => {
   try {
-    const { latitude, longitude } = req.body;
+    const { latitude, longitude } = req.query;
 
     const config = {
       method: "get",
@@ -85,19 +85,19 @@ const getLocationByCoordinates = async (req, res) => {
     };
 
     const response = await axios(config);
-
+    
     if (response.data.status === "OK" && response.data.results.length > 0) {
       //console.log(response.data);
 
       const address = response.data.results.map((place) => {
         return place.formatted_address;
       });
-      console.log(address);
-      return address;
+      res.json({ address });
     } else {
       return [];
     }
   } catch (error) {
+    console.log(error)
     return [];
   }
 };
