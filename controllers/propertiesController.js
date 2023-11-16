@@ -505,10 +505,11 @@ const updatePgProperty = async (req, res) => {
       latitude = null,
       longitude = null,
     } = req.body;
-        let coordinates;
+
+    let coordinates;
+
     if (locality) {
       coordinates = await getCoordinatesByLocation(locality);
-      console.log(coordinates);
     }
 
     const pgObject = {
@@ -546,10 +547,11 @@ const updatePgProperty = async (req, res) => {
       rank,
       post_property_page_no,
       modified_at: new Date(Date.now()),
-      latitude: coordinates[0],
-      longitude: coordinates[1],
+      latitude: coordinates?.[0],
+      longitude: coordinates?.[1],
     };
-        const pgArrDBKeys = [
+
+    const pgArrDBKeys = [
       "pg_name",
       "description",
       "block",
@@ -836,7 +838,7 @@ const listPropertiesOnSearch = async (req, res) => {
       parking = undefined,
       property_with_image = undefined,
       property_type = undefined,
-      gender = undefined
+      gender = undefined,
     } = filters || {};
 
     let available_date_less_than = undefined;
@@ -1064,45 +1066,43 @@ const listPropertiesOnSearch = async (req, res) => {
         WHERE pg_id = ANY ($1)
         GROUP BY pg_id;
       `;
-  
-        let mediaData = await db.query(queryForMedia, [pgIds]);
-  
-        const newMedia = mediaData.rows.map((mp) => {
-          const mediaFiles = [];
-  
-          for (let i = 0; i < mp.file_name.length; i++) {
-            mediaFiles.push({
-              file_name: mp.file_name[i],
-              media_url: mp.media_url[i],
-            });
-          }
-  
-          return { pg_id: mp.pg_id, images: mediaFiles };
-        });
-  
-        //console.log(newMedia);
-  
-        const mergedData = pgData.rows.map((pg) => {
-          const media = newMedia.find(
-            (item) => item.pg_id === pg.pgs_id
-          );
-          return {
-            ...pg,
-            ...media,
-          };
-        });
-  
-        let pgsData = mergedData;
-        if (property_with_image) {
-          pgsData = mergedData.filter((data) => {
-            return data.file_name.length > 0;
+
+      let mediaData = await db.query(queryForMedia, [pgIds]);
+
+      const newMedia = mediaData.rows.map((mp) => {
+        const mediaFiles = [];
+
+        for (let i = 0; i < mp.file_name.length; i++) {
+          mediaFiles.push({
+            file_name: mp.file_name[i],
+            media_url: mp.media_url[i],
           });
         }
-  
-        return res.status(200).json({
-          totalCount: pgsCount?.rows[0]?.total_count,
-          allpgs: pgsData,
+
+        return { pg_id: mp.pg_id, images: mediaFiles };
+      });
+
+      //console.log(newMedia);
+
+      const mergedData = pgData.rows.map((pg) => {
+        const media = newMedia.find((item) => item.pg_id === pg.pgs_id);
+        return {
+          ...pg,
+          ...media,
+        };
+      });
+
+      let pgsData = mergedData;
+      if (property_with_image) {
+        pgsData = mergedData.filter((data) => {
+          return data.file_name.length > 0;
         });
+      }
+
+      return res.status(200).json({
+        totalCount: pgsCount?.rows[0]?.total_count,
+        allhouses: pgsData,
+      });
     }
   } catch (e) {
     //.log(e);
@@ -1233,9 +1233,11 @@ const showShortlists = async (req, res) => {
       userId,
     ]);
 
+    if (rows.length === 0) return res.status(404).json("User not found");
+
     let shortlists = [];
 
-    if (propertyType === "houses") {
+    if (propertyType === "house") {
       shortlists = rows[0].house_shortlists;
 
       const data = await Promise.all(
@@ -1259,7 +1261,7 @@ const showShortlists = async (req, res) => {
       );
 
       return res.status(200).json({ data });
-    } else if (propertyType === "pgs") {
+    } else if (propertyType === "pg") {
       shortlists = rows[0].pg_shortlists;
 
       const data = await Promise.all(
@@ -1405,7 +1407,7 @@ const getOwnerDetails = async (req, res) => {
 
         if (
           ownerId === req.user.id ||
-          owners_contacted?.includes("h_" + houseId)
+          owners_contacted?.includes("h_" + propertyId)
         ) {
           return res.status(200).json({ exists: true, ...ownerData });
         } else {
@@ -1413,7 +1415,7 @@ const getOwnerDetails = async (req, res) => {
           //.log(count_owner_contacted);
           if (count_owner_contacted > 0) {
             //.log("ser" + req.user.id);
-            const ownerContacted = [...owners_contacted, "h_" + houseId];
+            const ownerContacted = [...owners_contacted, "h_" + propertyId];
             const countOwnerContacted = count_owner_contacted - 1;
 
             // console.log("owners_contacted: ", owners_contacted);
@@ -1463,14 +1465,17 @@ const getOwnerDetails = async (req, res) => {
         // if user is himself the owner or
         // he has already seen contacts for this property
         // show owner details
-        if (ownerId === req.user.id || owners_contacted.includes("p_" + pgId)) {
+        if (
+          ownerId === req.user.id ||
+          owners_contacted.includes("p_" + propertyId)
+        ) {
           return res
             .status(200)
             .json({ exists: true, name, email, phone_number });
         } else {
           // if user currently has more limit to view owners
           if (count_owner_contacted > 0) {
-            const ownerContacted = [...owners_contacted, "p_" + pgId];
+            const ownerContacted = [...owners_contacted, "p_" + propertyId];
             const countOwnerContacted = count_owner_contacted - 1;
 
             await db.query(
@@ -1668,7 +1673,11 @@ const getAllPropertiesContacted = async (req, res, next) => {
             "SELECT media_url, filename FROM propertyMediaTable WHERE house_id = $1",
             [id]
           );
-          return { ...data.rows[0], images: imageData.rows };
+          return {
+            ...data.rows[0],
+            images: imageData.rows,
+            propertyType: "house",
+          };
         } else {
           id = id.slice(2);
           const query = `SELECT * FROM pgs where id=$1`;
@@ -1678,7 +1687,11 @@ const getAllPropertiesContacted = async (req, res, next) => {
             [id]
           );
           //.log(data);
-          return { ...data.rows[0], images: imageData.rows };
+          return {
+            ...data.rows[0],
+            images: imageData.rows,
+            propertyType: "pg",
+          };
         }
       })
     );

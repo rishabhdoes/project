@@ -60,7 +60,11 @@ const {
   checkUserVerified,
   checkUserBlocked,
 } = require("../middleware/verified-middleware");
-const { paymentInitiation } = require("../controllers/paymentController.js");
+const {
+  paymentInitiation,
+  getAllPaymentPlans,
+  getPlanData,
+} = require("../controllers/paymentController.js");
 
 const { isPgOwner, pgValidation } = require("../middleware/pg-middleware");
 
@@ -164,6 +168,9 @@ router.post(
 
 router.post("/payment", paymentInitiation);
 
+// get all payment plans
+router.get("/payment-plans", getAllPaymentPlans);
+router.get("/plan-data", getPlanData);
 
 router.get("/logout", logout);
 
