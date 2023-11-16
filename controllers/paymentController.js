@@ -96,7 +96,6 @@ const paymentStatus = async (req, res) => {
   const jsonResponse = JSON.parse(parseDecryptedReq(decryptedResp));
 
   const jsonParam = encodeURIComponent(JSON.stringify(jsonResponse));
-  console.log("Hey NIKHIL MC", jsonResponse);
 
   res.redirect(`${CLIENT_URL}/payment/status?jsonData=${jsonParam}`);
   return;
