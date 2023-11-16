@@ -462,9 +462,9 @@ const updatePgProperty = async (req, res) => {
     if (!rows.length) return res.status(404).json("Pg does not exist");
 
     const pg = rows[0];
-
+    
     if (pg.owner_id !== userId) return res.status(401).json("Not Authorised");
-
+    
     let updatedPg = {};
 
     const {
@@ -505,7 +505,7 @@ const updatePgProperty = async (req, res) => {
       latitude = null,
       longitude = null,
     } = req.body;
-    let coordinates;
+        let coordinates;
     if (locality) {
       coordinates = await getCoordinatesByLocation(locality);
       console.log(coordinates);
@@ -549,7 +549,7 @@ const updatePgProperty = async (req, res) => {
       latitude: coordinates[0],
       longitude: coordinates[1],
     };
-    const pgArrDBKeys = [
+        const pgArrDBKeys = [
       "pg_name",
       "description",
       "block",
@@ -1101,7 +1101,7 @@ const listPropertiesOnSearch = async (req, res) => {
   
         return res.status(200).json({
           totalCount: pgsCount?.rows[0]?.total_count,
-          allhouses: pgsData,
+          allpgs: pgsData,
         });
     }
   } catch (e) {
