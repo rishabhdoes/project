@@ -10,11 +10,24 @@ const {
   toggleUserBlockedStatus,
   getAllUserBlocked,
 } = require("../controllers/profileController");
+const {
+  getPlans,
+  createPlans,
+  updatePlans,
+  togglePlanStatus,
+} = require("../controllers/plansController");
 
 const router = Router();
-router.get("/property", userAuth, adminVerify, getAdminPropertyList);
-router.delete("/property", userAuth, adminVerify, togglePropertyBlockedStatus);
-router.post("/users", userAuth, adminVerify, toggleUserBlockedStatus);
-router.get("/users", userAuth, adminVerify, getAllUserBlocked);
+//router.use(userAuth, adminVerify);
+
+router.get("/property", getAdminPropertyList);
+router.delete("/property", togglePropertyBlockedStatus);
+router.post("/users", toggleUserBlockedStatus);
+router.get("/users", getAllUserBlocked);
+
+router.get("/plans", getPlans);
+router.post("/plans", createPlans);
+router.patch("/plans", updatePlans);
+router.get("/togglePlans", togglePlanStatus);
 
 module.exports = router;

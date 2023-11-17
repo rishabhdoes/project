@@ -176,6 +176,7 @@ const updateHouseProperty = async (req, res) => {
       houseNo = null,
       pincode = null,
       address = null,
+      postPropertyPageNo: post_property_page_no = 0,
     } = req.body;
 
     const houseObj = {
@@ -217,6 +218,7 @@ const updateHouseProperty = async (req, res) => {
       houseNo,
       pincode,
       address,
+      post_property_page_no,
     };
 
     // default array that contains all columns that exist in houses db
@@ -261,6 +263,7 @@ const updateHouseProperty = async (req, res) => {
       "houseNo",
       "pincode",
       "address",
+      "post_property_page_no",
     ];
 
     // check whether values are null or not
@@ -459,9 +462,9 @@ const updatePgProperty = async (req, res) => {
     if (!rows.length) return res.status(404).json("Pg does not exist");
 
     const pg = rows[0];
-
+    
     if (pg.owner_id !== userId) return res.status(401).json("Not Authorised");
-
+    
     let updatedPg = {};
 
     const {
@@ -495,16 +498,18 @@ const updatePgProperty = async (req, res) => {
       lockin_period = null,
       preferred_tenants = null,
       gender = null,
-      food = null,
+      food_available = null,
       rank = null,
+      postPropertyPageNo: post_property_page_no = 0,
       modified_at,
       latitude = null,
       longitude = null,
     } = req.body;
+
     let coordinates;
+
     if (locality) {
       coordinates = await getCoordinatesByLocation(locality);
-      console.log(coordinates);
     }
 
     const pgObject = {
@@ -538,13 +543,14 @@ const updatePgProperty = async (req, res) => {
       lockin_period,
       preferred_tenants,
       gender,
-      food,
+      food_available,
       rank,
+      post_property_page_no,
       modified_at: new Date(Date.now()),
-      latitude: coordinates[0],
-      longitude: coordinates[1],
+      latitude: coordinates?.[0],
+      longitude: coordinates?.[1],
     };
-    console.log(pgObject);
+
     const pgArrDBKeys = [
       "pg_name",
       "description",
@@ -571,8 +577,9 @@ const updatePgProperty = async (req, res) => {
       "lockin_period",
       "preferred_tenants",
       "gender",
-      "food",
+      "food_available",
       "rank",
+      "post_property_page_no",
       "latitude",
       "longitude",
     ];
@@ -759,11 +766,27 @@ const getMyListings = async (req, res) => {
 
     let listings;
 
-    if (propertyType === "pgs") {
-      listings = await db.query(
-        "SELECT * FROM pgs LEFT OUTER JOIN pgfacilities ON pgs.id = pgfacilities.pg_id WHERE pgs.owner_id = $1",
-        [userId]
+    if (propertyType === "pg") {
+      listings = await db.query("SELECT * FROM pgs WHERE pgs.owner_id = $1", [
+        userId,
+      ]);
+
+      let listingsWithImages = await Promise.all(
+        listings.rows.map(async (pg) => {
+          const fetchData = async () => {
+            const { rows } = await db.query(
+              "SELECT media_url, id FROM propertyMediaTable WHERE pg_id = $1",
+              [pg.id]
+            );
+            return rows;
+          };
+
+          let newData = { ...pg, images: await fetchData() };
+          return newData;
+        })
       );
+
+      res.status(200).json({ listings: listingsWithImages });
     } else {
       listings = await db.query(
         "SELECT * FROM houses WHERE houses.owner_id = $1",
@@ -813,10 +836,19 @@ const listPropertiesOnSearch = async (req, res) => {
       available_from = undefined,
       furnishing_type = undefined,
       parking = undefined,
-      property_with_image = undefined,
+      property_with_image = null,
       property_type = undefined,
+      gender = undefined,
+      single_room = undefined,
+      double_room = undefined,
+      triple_room = undefined,
+      four_room = undefined,
+      breakfast = undefined,
+      lunch = undefined,
+      dinner = undefined,
+      attached_bathroom = undefined,
     } = filters || {};
-
+    
     let available_date_less_than = undefined;
     let available_date_greater_than = undefined;
     if (available_from === "immediate") {
@@ -828,14 +860,15 @@ const listPropertiesOnSearch = async (req, res) => {
     } else if (available_from === "after 30 days") {
       available_date_greater_than += new Date() + 30 * 24 * 60 * 60 * 1000;
     }
-
+    
     const keywords = text.map((textArray) => {
       const op = textArray.split(",");
       return op;
     });
-
+    
     const allKeywords = keywords.flat();
-
+    console.log("property_with_image:", property_with_image)
+    
     const queryForHouse = `
     SELECT houses.id as houses_id,*, housefacilities.id as housefacilities_id
     FROM houses
@@ -856,6 +889,7 @@ const listPropertiesOnSearch = async (req, res) => {
       AND (furnishing_type = ANY ($10) OR $10 IS NULL)
       AND (parking = ANY ($11) OR $11 IS NULL)
       AND (property_type = $12 OR $12 IS NULL)
+      AND (media_count >= $15 OR $15 IS NULL)
     ORDER BY (
       SELECT COUNT(DISTINCT word)
       FROM regexp_split_to_table(locality, E'\\s+') AS word
@@ -868,7 +902,7 @@ const listPropertiesOnSearch = async (req, res) => {
     LIMIT $14;
   `;
 
-    if (propertyType == "House" || propertyType == "house") {
+    if (propertyType === "House" || propertyType === "house") {
       const houseData = await db.query(queryForHouse, [
         allKeywords,
         city,
@@ -884,6 +918,7 @@ const listPropertiesOnSearch = async (req, res) => {
         property_type,
         10 * (pgNo - 1),
         10,
+        property_with_image
       ]);
 
       const houseIds = houseData.rows.map((row) => row.houses_id);
@@ -909,7 +944,7 @@ const listPropertiesOnSearch = async (req, res) => {
         AND (furnishing_type = ANY ($10) OR $10 IS NULL)
         AND (parking = ANY ($11) OR $11 IS NULL)
         AND (property_type = $12 OR $12 IS NULL)
-        AND(media_count>=$13 OR $13 IS NULL)
+        AND (media_count >= $13 OR $13 IS NULL)
           `;
 
       const totalCount = await db.query(queryForhouseCount, [
@@ -963,11 +998,11 @@ const listPropertiesOnSearch = async (req, res) => {
       });
 
       let housesData = mergedData;
-      if (property_with_image) {
-        housesData = mergedData.filter((data) => {
-          return data.file_name.length > 0;
-        });
-      }
+      // if (property_with_image) {
+      //   housesData = mergedData.filter((data) => {
+      //     return data.file_name.length > 0;
+      //   });
+      // }
 
       return res.status(200).json({
         totalCount: totalCount?.rows[0]?.total_count,
@@ -977,26 +1012,32 @@ const listPropertiesOnSearch = async (req, res) => {
       // mergedData contains the combined information from house and media tables
       // Rest of your code
     } else {
-      const queryForPg = `SELECT  pgs.id as pgs_id,*,pgfacilities.id as pgfacilities_id
+      const queryForPg = `SELECT pgs.id as pgs_id,*, pgfacilities.id as pgfacilities_id
       FROM pgs
       LEFT JOIN pgfacilities ON pgs.id = pgfacilities.pg_id
       WHERE is_active='true'
       AND is_verified='true'
-      AND  city ILIKE $2
+      AND city ILIKE $2
         AND locality ILIKE ANY (
           SELECT '%' || pattern || '%'
           FROM unnest($1::text[]) AS pattern
+        )AND (gender = ($5) OR $5 IS NULL)
+        AND (preferred_tenants = ANY ($6) OR $6 IS NULL)
+        AND (single_room = $7 OR $7 IS NULL)
+        AND (double_room = $8 OR $8 IS NULL)
+        AND (triple_room = $9 OR $9 IS NULL)
+        AND (four_room = $10 OR $10 IS NULL)
+        AND (breakfast = $11 OR $11 IS NULL)
+        AND (lunch = $12 OR $12 IS NULL)
+        AND (dinner = $13 OR $13 IS NULL)
+        AND (media_count >= $14 OR $14 IS NULL)
+        AND (attached_bathroom = $15 OR $15 IS NULL)
+        AND (
+          (single_room_rent >= $16 OR $16 IS NULL) AND (single_room_rent <= $17 OR $17 IS NULL) 
+          OR (double_room_rent >= $16 OR $16 IS NULL) AND (double_room_rent <= $17 OR $17 IS NULL) 
+          OR (triple_room_rent >= $16 OR $16 IS NULL) AND (triple_room_rent <= $17 OR $17 IS NULL) 
+          OR (four_room_rent >= $16 OR $16 IS NULL) AND (four_room_rent <= $17 OR $17 IS NULL)
         )
-        AND (room_type = ANY ($3) OR $3 IS NULL)
-      AND (preferred_tenants = ANY ($4) OR $4 IS NULL)
-      AND (rent >= $5 OR $5 IS NULL)
-      AND (rent <= $6 OR $6 IS NULL)
-      AND (available_from <= $7 OR $7 IS NULL)
-      AND (available_from >= $8 OR $8 IS NULL)
-      AND (parking = ANY ($9) OR $9 IS NULL)
-      AND (breakfast='true'  OR $10 IS NULL)
-      AND (lunch='true'  OR $11 IS NULL)
-      AND (dinner='true'  OR $12 IS NULL)
       ORDER BY (
         SELECT COUNT(DISTINCT word)
         FROM regexp_split_to_table(locality, E'\\s+') AS word
@@ -1011,36 +1052,118 @@ const listPropertiesOnSearch = async (req, res) => {
       const queryForpgCount = `
       SELECT COUNT(*) AS total_count
       FROM pgs
-      WHERE is_active='true'
-      AND is_verified='true'                                                                                                                                                                                             
-      AND  city ILIKE $2
+      LEFT JOIN pgfacilities ON pgs.id = pgfacilities.pg_id
+      WHERE 
+      is_active='true'
+      AND is_verified='true'
+      AND city ILIKE $2
         AND locality ILIKE ANY (
           SELECT '%' || pattern || '%'
           FROM unnest($1::text[]) AS pattern
-        ); 
-        AND (room_type = ANY ($3) OR $3 IS NULL)
-      AND (preferred_tenants = ANY ($4) OR $4 IS NULL)
-      AND (rent >= $5 OR $5 IS NULL)
-      AND (rent <= $6 OR $6 IS NULL)
-      AND (available_from <= $7 OR $7 IS NULL)
-      AND (available_from >= $8 OR $8 IS NULL)
-      AND (parking = ANY ($9) OR $9 IS NULL)
-      AND (breakfast='true'  OR $10 IS NULL)
-      AND (lunch='true'  OR $11 IS NULL)
-      AND (dinner='true'  OR $12 IS NULL)
+        )AND (gender =  ($3) OR $3 IS NULL)
+        AND (preferred_tenants = ANY ($4) OR $4 IS NULL)
+        AND (media_count >= $5 OR $5 IS NULL)
+        AND (single_room = $6 OR $6 IS NULL)
+        AND (double_room = $7 OR $7 IS NULL)
+        AND (triple_room = $8 OR $8 IS NULL)
+        AND (four_room = $9 OR $9 IS NULL)
+        AND (breakfast = $10 OR $10 IS NULL)
+        AND (lunch = $11 OR $11 IS NULL)
+        AND (dinner = $12 OR $12 IS NULL)
+        AND (attached_bathroom = $13 OR $13 IS NULL)
+        AND (
+          (single_room_rent >= $14 OR $14 IS NULL) AND (single_room_rent <= $15 OR $15 IS NULL) 
+          OR (double_room_rent >= $14 OR $14 IS NULL) AND (double_room_rent <= $15 OR $15 IS NULL) 
+          OR (triple_room_rent >= $14 OR $14 IS NULL) AND (triple_room_rent <= $15 OR $15 IS NULL) 
+          OR (four_room_rent >= $14 OR $14 IS NULL) AND (four_room_rent <= $15 OR $15 IS NULL)
+        )
         `;
 
-      const pgsData = await db.query(queryForPg, [
+      const pgData = await db.query(queryForPg, [
         allKeywords,
         city,
         10 * (pgNo - 1),
         10,
+        gender,
+        preferred_tenants,
+        single_room,
+        double_room,
+        triple_room,
+        four_room,
+        breakfast, 
+        lunch, 
+        dinner,
+        property_with_image,
+        attached_bathroom,
+        price_greater_than,
+        price_less_than,
       ]);
-      const pgsCount = await db.query(queryForpgCount, [allKeywords, city]);
+      const pgsCount = await db.query(queryForpgCount, [
+        allKeywords,
+        city,
+        gender,
+        preferred_tenants,
+        property_with_image,
+        single_room,
+        double_room,
+        triple_room,
+        four_room,
+        breakfast, 
+        lunch, 
+        dinner,
+        attached_bathroom,
+        price_greater_than,
+        price_less_than,
+      ]);
 
-      return res
-        .status(200)
-        .json({ allpgs: pgsData.rows, totalCount: pgsCount.rows[0] });
+      // return res
+      //   .status(200)
+      //   .json({ allpgs: pgData?.rows, totalCount: pgsCount?.rows[0]?.total_count });
+      const pgIds = pgData.rows.map((row) => row.pgs_id);
+
+      const queryForMedia = `
+        SELECT pg_id, array_agg(DISTINCT filename) AS file_name,array_agg(DISTINCT media_url) AS media_url
+        FROM propertymediatable
+        WHERE pg_id = ANY ($1)
+        GROUP BY pg_id;
+      `;
+
+      let mediaData = await db.query(queryForMedia, [pgIds]);
+
+      const newMedia = mediaData.rows.map((mp) => {
+        const mediaFiles = [];
+
+        for (let i = 0; i < mp.file_name.length; i++) {
+          mediaFiles.push({
+            file_name: mp.file_name[i],
+            media_url: mp.media_url[i],
+          });
+        }
+
+        return { pg_id: mp.pg_id, images: mediaFiles };
+      });
+
+      //console.log(newMedia);
+
+      const mergedData = pgData.rows.map((pg) => {
+        const media = newMedia.find((item) => item.pg_id === pg.pgs_id);
+        return {
+          ...pg,
+          ...media,
+        };
+      });
+
+      let pgsData = mergedData;
+      // if (property_with_image) {
+      //   pgsData = mergedData.filter((data) => {
+      //     return data.file_name.length > 0;
+      //   });
+      // }
+
+      return res.status(200).json({
+        totalCount: pgsCount?.rows[0]?.total_count,
+        allpgs: pgsData,
+      });
     }
   } catch (e) {
     //.log(e);
@@ -1171,9 +1294,11 @@ const showShortlists = async (req, res) => {
       userId,
     ]);
 
+    if (rows.length === 0) return res.status(404).json("User not found");
+
     let shortlists = [];
 
-    if (propertyType === "houses") {
+    if (propertyType === "house") {
       shortlists = rows[0].house_shortlists;
 
       const data = await Promise.all(
@@ -1197,7 +1322,7 @@ const showShortlists = async (req, res) => {
       );
 
       return res.status(200).json({ data });
-    } else if (propertyType === "pgs") {
+    } else if (propertyType === "pg") {
       shortlists = rows[0].pg_shortlists;
 
       const data = await Promise.all(
@@ -1303,11 +1428,12 @@ const getUser = async (req, res) => {
 
 const getOwnerDetails = async (req, res) => {
   try {
-    const { houseId = null, pgId = null } = req.body;
-    if (houseId) {
+    const { propertyId = null, propertyType = null } = req.body;
+
+    if (propertyType === "house") {
       const { rows, rowCount } = await db.query(
         "SELECT * FROM houses WHERE id = $1",
-        [houseId]
+        [propertyId]
       );
 
       if (rowCount <= 0) {
@@ -1342,7 +1468,7 @@ const getOwnerDetails = async (req, res) => {
 
         if (
           ownerId === req.user.id ||
-          owners_contacted?.includes("h_" + houseId)
+          owners_contacted?.includes("h_" + propertyId)
         ) {
           return res.status(200).json({ exists: true, ...ownerData });
         } else {
@@ -1350,7 +1476,7 @@ const getOwnerDetails = async (req, res) => {
           //.log(count_owner_contacted);
           if (count_owner_contacted > 0) {
             //.log("ser" + req.user.id);
-            const ownerContacted = [...owners_contacted, "h_" + houseId];
+            const ownerContacted = [...owners_contacted, "h_" + propertyId];
             const countOwnerContacted = count_owner_contacted - 1;
 
             // console.log("owners_contacted: ", owners_contacted);
@@ -1371,10 +1497,10 @@ const getOwnerDetails = async (req, res) => {
           }
         }
       }
-    } else {
+    } else if (propertyType === "pg") {
       const { rows, rowCount } = await db.query(
         "SELECT * FROM pgs WHERE id = $1",
-        [pgId]
+        [propertyId]
       );
 
       if (rowCount <= 0) {
@@ -1400,14 +1526,17 @@ const getOwnerDetails = async (req, res) => {
         // if user is himself the owner or
         // he has already seen contacts for this property
         // show owner details
-        if (ownerId === req.user.id || owners_contacted.includes("p_" + pgId)) {
+        if (
+          ownerId === req.user.id ||
+          owners_contacted.includes("p_" + propertyId)
+        ) {
           return res
             .status(200)
             .json({ exists: true, name, email, phone_number });
         } else {
           // if user currently has more limit to view owners
           if (count_owner_contacted > 0) {
-            const ownerContacted = [...owners_contacted, "p_" + pgId];
+            const ownerContacted = [...owners_contacted, "p_" + propertyId];
             const countOwnerContacted = count_owner_contacted - 1;
 
             await db.query(
@@ -1429,7 +1558,6 @@ const getOwnerDetails = async (req, res) => {
       }
     }
   } catch (err) {
-    m;
     res.status(400).json(err);
   }
 };
@@ -1606,7 +1734,11 @@ const getAllPropertiesContacted = async (req, res, next) => {
             "SELECT media_url, filename FROM propertyMediaTable WHERE house_id = $1",
             [id]
           );
-          return { ...data.rows[0], images: imageData.rows };
+          return {
+            ...data.rows[0],
+            images: imageData.rows,
+            propertyType: "house",
+          };
         } else {
           id = id.slice(2);
           const query = `SELECT * FROM pgs where id=$1`;
@@ -1616,7 +1748,11 @@ const getAllPropertiesContacted = async (req, res, next) => {
             [id]
           );
           //.log(data);
-          return { ...data.rows[0], images: imageData.rows };
+          return {
+            ...data.rows[0],
+            images: imageData.rows,
+            propertyType: "pg",
+          };
         }
       })
     );

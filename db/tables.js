@@ -157,7 +157,7 @@ const queries = {
     lockin_period VARCHAR (255),
     preferred_tenants VARCHAR (255) DEFAULT 'any',
     gender VARCHAR (255) DEFAULT 'any',
-    food BOOLEAN DEFAULT FALSE NOT NULL,
+    food_available BOOLEAN DEFAULT FALSE NOT NULL,
     rank INTEGER DEFAULT 0,
     created_at timestamp DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamp DEFAULT CURRENT_TIMESTAMP,
@@ -263,9 +263,20 @@ const queries = {
       payment_date DATE NOT NULL,
       amount DECIMAL(10, 2) NOT NULL,
       payment_method VARCHAR(50) NOT NULL,
-      status VARCHAR(20) NOT NULL,
+      status VARCHAR(20) Default "pending",
       transaction_id VARCHAR(100)
-     
+  )`,
+
+  paymentPlans: `
+  CREATE TABLE paymentPlans (
+    id UUID DEFAULT uuid_generate_v4(),
+    plan_type VARCHAR(50) NOT NULL,
+    price NUMERIC(10,2) NOT NULL,
+    no_of_contacts INTEGER CHECK (no_of_contacts >= 0) NOT NULL,
+    discount DEFAULT 0 NUMERIC(3, 2) CHECK (discount >= 0 AND discount <= 100),
+    plan_description TEXT[] DEFAULT ARRAY['']::TEXT[] NOT NULL,
+    gst NUMERIC(5, 2) DEFAULT 0 CHECK (gst >= 0),
+    total_price NUMERIC(10, 2) NOT NULL
   )`,
 };
 
