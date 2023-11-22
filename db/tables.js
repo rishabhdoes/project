@@ -276,7 +276,9 @@ const queries = {
     discount DEFAULT 0 NUMERIC(3, 2) CHECK (discount >= 0 AND discount <= 100),
     plan_description TEXT[] DEFAULT ARRAY['']::TEXT[] NOT NULL,
     gst NUMERIC(5, 2) DEFAULT 0 CHECK (gst >= 0),
-    total_price NUMERIC(10, 2) NOT NULL
+    total_price NUMERIC(10, 2) NOT NULL,
+    gst_percentage NUMERIC(3, 1) DEFAULT 18,
+    status BOOLEAN DEFAULT true
   )`,
 };
 

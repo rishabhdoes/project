@@ -6,13 +6,27 @@ const http = require("http"),
   qs = require("querystring");
 const { CLIENT_URL } = require("../config/index.js");
 
-const paymentInitiation = async (request, response) => {
+const paymentInitiation = async (req, res) => {
   var body = "",
     workingKey = "720702AAB0A040750D93E088C061049E", //Put in the 32-Bit key shared by CCAvenues.
     accessCode = "AVYV17KJ86AH05VYHA", //Put in the Access Code shared by CCAvenues.
     encRequest = "",
     formbody = "";
-  const { data } = request.body;
+
+  const { data, no_of_contacts } = req.body;
+
+  await db.query(
+    `Insert into payments (user_id, amount, status, order_id, currency, no_of_contacts)
+  values($1, $2, $3, $4, $5, $6)`,
+    [
+      req.user.id,
+      data.amount,
+      "pending",
+      data.order_id,
+      data.currency,
+      no_of_contacts,
+    ]
+  );
 
   //Generate Md5 hash for the key and then convert in base64 string
   var md5 = crypto.createHash("md5").update(workingKey).digest();
@@ -38,7 +52,7 @@ const paymentInitiation = async (request, response) => {
     })
     .join("&");
 
-  // request.on("end", function () {
+  // req.on("end", function () {
   if (data) {
     encRequest = ccav.encrypt(queryString, keyBase64, ivBase64);
     formbody = `<form id="nonseamless" method="post" name="redirect" action="https://test.ccavenue.com/transaction/transaction.do?command=initiateTransaction&encRequest=${encRequest}&access_code=${accessCode}"/> <input type="hidden" id="encRequest" name="encRequest" value="' +
@@ -46,16 +60,16 @@ const paymentInitiation = async (request, response) => {
         '"><input type="hidden" name="access_code" id="access_code" value="' +
         accessCode +
         '"><input type="hidden" name="currency" id="currency" value="INR"><script language="javascript">document.redirect.submit();</script></form>`;
-    // response.writeHeader(200, { "Content-Type": "text/html" });
-    // response.write(formbody);
+    // res.writeHeader(200, { "Content-Type": "text/html" });
+    // res.write(formbody);
     const script =
       '<script language="javascript">console.log("Before form submission"); document.getElementById("nonseamless").submit(); console.log("After form submission");</script>';
 
-    // Send the formbody and script in the response
-    response.write(formbody + script);
+    // Send the formbody and script in the res
+    res.write(formbody + script);
 
-    // End the response after sending all the data
-    response.end();
+    // End the res after sending all the data
+    res.end();
   }
   // });
   return;
@@ -91,23 +105,78 @@ const paymentStatus = async (req, res) => {
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b,
     0x0c, 0x0d, 0x0e, 0x0f,
   ]).toString("base64");
+
   const decryptedResp = ccav.decrypt(encResp, keyBase64, ivBase64);
 
   const jsonResponse = JSON.parse(parseDecryptedReq(decryptedResp));
 
+  const {
+    tracking_id,
+    bank_ref_no,
+    order_status,
+    payment_mode,
+    trans_date,
+    order_id,
+  } = jsonResponse;
+
+  let date;
+
+  if (trans_date !== "null") {
+    const [day, month, year, hour, minute, second] =
+      trans_date.split(/\/|\s|:/);
+    date = new Date(year, month - 1, day, hour, minute, second);
+  } else {
+    date = new Date(); // Use the current date when trans_date is null
+    const formattedDate = date.toLocaleString("en-IN", {
+      day: "numeric",
+      month: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+      second: "numeric",
+      hour12: false, // 24-hour format
+    });
+
+    jsonResponse.trans_date = formattedDate;
+  }
+
   const jsonParam = encodeURIComponent(JSON.stringify(jsonResponse));
 
+  await db.query(
+    `Update payments SET tracking_id=$1, bank_ref_no=$2, status=$3, payment_mode=$4, payment_date=$5 WHERE order_id=$6`,
+    [tracking_id, bank_ref_no, order_status, payment_mode, date, order_id]
+  );
+
   res.redirect(`${CLIENT_URL}/payment/status?jsonData=${jsonParam}`);
+
   return;
 };
 
 const getAllPaymentPlans = async (req, res) => {
-  const { rows, rowCount } = await db.query(`SELECT * FROM paymentplans`);
-  if (rowCount === 0) {
-    return res.sendMsg(res, 400, false, "Payment plans not found!");
+  const { id } = req.user;
+  const { rows } = await db.query(
+    `Select is_user_admin from users WHERE id = $1`,
+    [id]
+  );
+
+  if (rows && rows[0].is_user_admin) {
+    const { rows, rowCount } = await db.query(`SELECT * FROM paymentplans`);
+    if (rowCount === 0) {
+      return res.sendMsg(res, 400, false, "Sorry, No Payment plans found!");
+    } else {
+      const paymentPlans = rows;
+      return res.status(200).json(paymentPlans);
+    }
   } else {
-    const paymentPlans = rows;
-    return res.status(200).json(paymentPlans);
+    const { rows, rowCount } = await db.query(
+      `SELECT * FROM paymentplans WHERE status = true`
+    );
+    if (rowCount === 0) {
+      return res.sendMsg(res, 400, false, "Sorry, No Payment plans found!");
+    } else {
+      const paymentPlans = rows;
+      return res.status(200).json(paymentPlans);
+    }
   }
 };
 
@@ -127,9 +196,36 @@ const getPlanData = async (req, res) => {
   }
 };
 
+const increaseContacts = async (req, res) => {
+  const id = req.user.id;
+  const { order_id } = req.body;
+
+  const { rows, rowCount } = await db.query(
+    `SELECT no_of_contacts, added_contacts from payments WHERE order_id = $1`,
+    [order_id]
+  );
+
+  if (rowCount === 0) {
+    return res.status(404).json("Order not found");
+  } else if (!rows[0].added_contacts) {
+    await db.query(
+      `UPDATE payments SET added_contacts = $1 WHERE order_id = $2`,
+      [true, order_id]
+    );
+    await db.query(
+      `UPDATE users SET count_owner_contacted = count_owner_contacted + $1 WHERE id = $2`,
+      [rows[0].no_of_contacts, id]
+    );
+    return res.status(200).json("Successfully added contacts to user");
+  } else {
+    return res.status(200).json("Successfully added contacts to user");
+  }
+};
+
 module.exports = {
   paymentInitiation,
   paymentStatus,
   getAllPaymentPlans,
   getPlanData,
+  increaseContacts,
 };

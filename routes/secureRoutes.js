@@ -64,6 +64,7 @@ const {
   paymentInitiation,
   getAllPaymentPlans,
   getPlanData,
+  increaseContacts,
 } = require("../controllers/paymentController.js");
 
 const { isPgOwner, pgValidation } = require("../middleware/pg-middleware");
@@ -171,6 +172,8 @@ router.post("/payment", paymentInitiation);
 // get all payment plans
 router.get("/payment-plans", getAllPaymentPlans);
 router.get("/plan-data", getPlanData);
+
+router.patch("/increase-contacts", increaseContacts);
 
 router.get("/logout", logout);
 
