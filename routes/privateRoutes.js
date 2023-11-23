@@ -18,7 +18,7 @@ const {
 } = require("../controllers/plansController");
 
 const router = Router();
-//router.use(userAuth, adminVerify);
+router.use(userAuth, adminVerify);
 
 router.get("/property", getAdminPropertyList);
 router.delete("/property", togglePropertyBlockedStatus);

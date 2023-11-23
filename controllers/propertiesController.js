@@ -836,11 +836,19 @@ const listPropertiesOnSearch = async (req, res) => {
       available_from = undefined,
       furnishing_type = undefined,
       parking = undefined,
-      property_with_image = undefined,
+      property_with_image = null,
       property_type = undefined,
       gender = undefined,
+      single_room = undefined,
+      double_room = undefined,
+      triple_room = undefined,
+      four_room = undefined,
+      breakfast = undefined,
+      lunch = undefined,
+      dinner = undefined,
+      attached_bathroom = undefined,
     } = filters || {};
-
+    
     let available_date_less_than = undefined;
     let available_date_greater_than = undefined;
     if (available_from === "immediate") {
@@ -852,14 +860,15 @@ const listPropertiesOnSearch = async (req, res) => {
     } else if (available_from === "after 30 days") {
       available_date_greater_than += new Date() + 30 * 24 * 60 * 60 * 1000;
     }
-
+    
     const keywords = text.map((textArray) => {
       const op = textArray.split(",");
       return op;
     });
-
+    
     const allKeywords = keywords.flat();
-
+    console.log("property_with_image:", property_with_image)
+    
     const queryForHouse = `
     SELECT houses.id as houses_id,*, housefacilities.id as housefacilities_id
     FROM houses
@@ -880,6 +889,7 @@ const listPropertiesOnSearch = async (req, res) => {
       AND (furnishing_type = ANY ($10) OR $10 IS NULL)
       AND (parking = ANY ($11) OR $11 IS NULL)
       AND (property_type = $12 OR $12 IS NULL)
+      AND (media_count >= $15 OR $15 IS NULL)
     ORDER BY (
       SELECT COUNT(DISTINCT word)
       FROM regexp_split_to_table(locality, E'\\s+') AS word
@@ -908,6 +918,7 @@ const listPropertiesOnSearch = async (req, res) => {
         property_type,
         10 * (pgNo - 1),
         10,
+        property_with_image
       ]);
 
       const houseIds = houseData.rows.map((row) => row.houses_id);
@@ -933,7 +944,7 @@ const listPropertiesOnSearch = async (req, res) => {
         AND (furnishing_type = ANY ($10) OR $10 IS NULL)
         AND (parking = ANY ($11) OR $11 IS NULL)
         AND (property_type = $12 OR $12 IS NULL)
-        AND(media_count>=$13 OR $13 IS NULL)
+        AND (media_count >= $13 OR $13 IS NULL)
           `;
 
       const totalCount = await db.query(queryForhouseCount, [
@@ -987,11 +998,11 @@ const listPropertiesOnSearch = async (req, res) => {
       });
 
       let housesData = mergedData;
-      if (property_with_image) {
-        housesData = mergedData.filter((data) => {
-          return data.file_name.length > 0;
-        });
-      }
+      // if (property_with_image) {
+      //   housesData = mergedData.filter((data) => {
+      //     return data.file_name.length > 0;
+      //   });
+      // }
 
       return res.status(200).json({
         totalCount: totalCount?.rows[0]?.total_count,
@@ -1010,8 +1021,23 @@ const listPropertiesOnSearch = async (req, res) => {
         AND locality ILIKE ANY (
           SELECT '%' || pattern || '%'
           FROM unnest($1::text[]) AS pattern
-        )AND (gender = ANY ($5) OR $5 IS NULL)
+        )AND (gender = ($5) OR $5 IS NULL)
         AND (preferred_tenants = ANY ($6) OR $6 IS NULL)
+        AND (single_room = $7 OR $7 IS NULL)
+        AND (double_room = $8 OR $8 IS NULL)
+        AND (triple_room = $9 OR $9 IS NULL)
+        AND (four_room = $10 OR $10 IS NULL)
+        AND (breakfast = $11 OR $11 IS NULL)
+        AND (lunch = $12 OR $12 IS NULL)
+        AND (dinner = $13 OR $13 IS NULL)
+        AND (media_count >= $14 OR $14 IS NULL)
+        AND (attached_bathroom = $15 OR $15 IS NULL)
+        AND (
+          (single_room_rent >= $16 OR $16 IS NULL) AND (single_room_rent <= $17 OR $17 IS NULL) 
+          OR (double_room_rent >= $16 OR $16 IS NULL) AND (double_room_rent <= $17 OR $17 IS NULL) 
+          OR (triple_room_rent >= $16 OR $16 IS NULL) AND (triple_room_rent <= $17 OR $17 IS NULL) 
+          OR (four_room_rent >= $16 OR $16 IS NULL) AND (four_room_rent <= $17 OR $17 IS NULL)
+        )
       ORDER BY (
         SELECT COUNT(DISTINCT word)
         FROM regexp_split_to_table(locality, E'\\s+') AS word
@@ -1034,9 +1060,23 @@ const listPropertiesOnSearch = async (req, res) => {
         AND locality ILIKE ANY (
           SELECT '%' || pattern || '%'
           FROM unnest($1::text[]) AS pattern
-        )AND (gender = ANY ($3) OR $3 IS NULL)
+        )AND (gender =  ($3) OR $3 IS NULL)
         AND (preferred_tenants = ANY ($4) OR $4 IS NULL)
-        AND(media_count>=$5 OR $5 IS NULL)
+        AND (media_count >= $5 OR $5 IS NULL)
+        AND (single_room = $6 OR $6 IS NULL)
+        AND (double_room = $7 OR $7 IS NULL)
+        AND (triple_room = $8 OR $8 IS NULL)
+        AND (four_room = $9 OR $9 IS NULL)
+        AND (breakfast = $10 OR $10 IS NULL)
+        AND (lunch = $11 OR $11 IS NULL)
+        AND (dinner = $12 OR $12 IS NULL)
+        AND (attached_bathroom = $13 OR $13 IS NULL)
+        AND (
+          (single_room_rent >= $14 OR $14 IS NULL) AND (single_room_rent <= $15 OR $15 IS NULL) 
+          OR (double_room_rent >= $14 OR $14 IS NULL) AND (double_room_rent <= $15 OR $15 IS NULL) 
+          OR (triple_room_rent >= $14 OR $14 IS NULL) AND (triple_room_rent <= $15 OR $15 IS NULL) 
+          OR (four_room_rent >= $14 OR $14 IS NULL) AND (four_room_rent <= $15 OR $15 IS NULL)
+        )
         `;
 
       const pgData = await db.query(queryForPg, [
@@ -1046,6 +1086,17 @@ const listPropertiesOnSearch = async (req, res) => {
         10,
         gender,
         preferred_tenants,
+        single_room,
+        double_room,
+        triple_room,
+        four_room,
+        breakfast, 
+        lunch, 
+        dinner,
+        property_with_image,
+        attached_bathroom,
+        price_greater_than,
+        price_less_than,
       ]);
       const pgsCount = await db.query(queryForpgCount, [
         allKeywords,
@@ -1053,6 +1104,16 @@ const listPropertiesOnSearch = async (req, res) => {
         gender,
         preferred_tenants,
         property_with_image,
+        single_room,
+        double_room,
+        triple_room,
+        four_room,
+        breakfast, 
+        lunch, 
+        dinner,
+        attached_bathroom,
+        price_greater_than,
+        price_less_than,
       ]);
 
       // return res
@@ -1093,15 +1154,15 @@ const listPropertiesOnSearch = async (req, res) => {
       });
 
       let pgsData = mergedData;
-      if (property_with_image) {
-        pgsData = mergedData.filter((data) => {
-          return data.file_name.length > 0;
-        });
-      }
+      // if (property_with_image) {
+      //   pgsData = mergedData.filter((data) => {
+      //     return data.file_name.length > 0;
+      //   });
+      // }
 
       return res.status(200).json({
         totalCount: pgsCount?.rows[0]?.total_count,
-        allhouses: pgsData,
+        allpgs: pgsData,
       });
     }
   } catch (e) {
