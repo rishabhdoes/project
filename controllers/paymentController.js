@@ -5,7 +5,7 @@ const http = require("http"),
   crypto = require("crypto"),
   qs = require("querystring");
 const { CLIENT_URL } = require("../config/index.js");
-
+const axios = require("axios");
 const paymentInitiation = async (request, response) => {
   var body = "",
     workingKey = "720702AAB0A040750D93E088C061049E", //Put in the 32-Bit key shared by CCAvenues.
@@ -101,6 +101,86 @@ const paymentStatus = async (req, res) => {
   return;
 };
 
+const paymentTransactionStatus = async  (req, res) => {
+  var body = "",
+    workingKey = "720702AAB0A040750D93E088C061049E", //Put in the 32-Bit key shared by CCAvenues.
+    accessCode = "AVYV17KJ86AH05VYHA", //Put in the Access Code shared by CCAvenues.
+    encRequest = "",
+    formbody = "";
+  const  data  = req.query;
+
+
+  //Generate Md5 hash for the key and then convert in base64 string
+  var md5 = crypto.createHash("md5").update(workingKey).digest();
+  var keyBase64 = Buffer.from(md5).toString("base64");
+
+  //Initializing Vector and then convert in base64 string
+  var ivBase64 = Buffer.from([
+    0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b,
+    0x0c, 0x0d, 0x0e, 0x0f,
+  ]).toString("base64");
+
+  if (data) {
+    body += JSON.stringify(data);
+  }
+  const jsonData = JSON.parse(body);
+
+  const queryString = Object.keys(jsonData)
+    .map((key) => {
+      if (typeof jsonData[key] === "string") {
+        return `${key}=${encodeURIComponent(jsonData[key])}`;
+      }
+      return `${key}=${jsonData[key]}`;
+    })
+    .join("&");
+
+
+  if (data) {
+    encRequest = ccav.encrypt(body, keyBase64, ivBase64);
+    try {
+      var config = {
+        method: "post",
+        url: `https://apitest.ccavenue.com/apis/servlet/DoWebTrans?enc_request=${encRequest}&access_code=${accessCode}&request_type=JSON&command=orderStatusTracker&version=1.2`,
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      };
+  
+      const response = await axios(config);
+      console.log("response:", response.data)
+
+      const result = response.data;
+      let status = '';
+      const information = result.split('&');
+
+      information.forEach(info => {
+        const info_value = info.split('=');
+        if (info_value[0] === 'enc_response') {
+          status = ccav.decrypt(info_value[1].trim(), keyBase64, ivBase64);
+        }
+      });
+      // console.log("status:", status)
+      console.log("status:", status)
+      return res.status(200).json(status);
+
+    } catch (error) {
+      return null;
+    }
+  }
+  return;
+}
+
+const getAllTransactionByUser = async (req, res) => {
+  const {id} = req.user;
+
+  const { rows, rowCount } = await db.query(
+    "SELECT * FROM payments where user_id = $1",
+    [id]
+  );
+  return res.status(200).json(rows);
+    
+  
+}
 const getAllPaymentPlans = async (req, res) => {
   const { rows, rowCount } = await db.query(`SELECT * FROM paymentplans`);
   if (rowCount === 0) {
@@ -130,6 +210,8 @@ const getPlanData = async (req, res) => {
 module.exports = {
   paymentInitiation,
   paymentStatus,
+  paymentTransactionStatus,
+  getAllTransactionByUser,
   getAllPaymentPlans,
   getPlanData,
 };
