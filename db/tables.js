@@ -138,21 +138,21 @@ const queries = {
     state VARCHAR (255),
     country VARCHAR (255),
     zip_code VARCHAR (255),
-    single_room BOOLEAN DEFAULT FALSE NOT NULL,
-    single_room_rent NUMERIC DEFAULT 0 CHECK(single_room_rent >= 0),
-    single_room_deposit NUMERIC DEFAULT 0 CHECK(single_room_deposit >= 0),
+    single_room BOOLEAN DEFAULT NULL,
+    single_room_rent NUMERIC DEFAULT NULL,
+    single_room_deposit NUMERIC DEFAULT NULL,
     
-    double_room BOOLEAN DEFAULT FALSE NOT NULL,
-    double_room_rent NUMERIC DEFAULT 0 CHECK(double_room_rent >= 0),
-    double_room_deposit NUMERIC DEFAULT 0 CHECK(double_room_deposit >= 0),
+    double_room BOOLEAN DEFAULT NULL,
+    double_room_rent NUMERIC DEFAULT NULL,
+    double_room_deposit NUMERIC DEFAULT NULL,
     
-    triple_room BOOLEAN DEFAULT FALSE NOT NULL,
-    triple_room_rent NUMERIC DEFAULT 0 CHECK(triple_room_rent >= 0),
-    triple_room_deposit NUMERIC DEFAULT 0 CHECK(triple_room_deposit >= 0),
+    triple_room BOOLEAN DEFAULT NULL,
+    triple_room_rent NUMERIC DEFAULT NULL,
+    triple_room_deposit NUMERIC DEFAULT NULL,
     
-    four_room BOOLEAN DEFAULT FALSE NOT NULL,
-    four_room_rent NUMERIC DEFAULT 0 CHECK(four_room_rent >= 0),
-    four_room_deposit NUMERIC DEFAULT 0 CHECK(four_room_deposit >= 0),
+    four_room BOOLEAN DEFAULT NULL,
+    four_room_rent NUMERIC DEFAULT NULL,
+    four_room_deposit NUMERIC DEFAULT NULL,
 
     lockin_period VARCHAR (255),
     preferred_tenants VARCHAR (255) DEFAULT 'any',
@@ -276,7 +276,9 @@ const queries = {
     discount DEFAULT 0 NUMERIC(3, 2) CHECK (discount >= 0 AND discount <= 100),
     plan_description TEXT[] DEFAULT ARRAY['']::TEXT[] NOT NULL,
     gst NUMERIC(5, 2) DEFAULT 0 CHECK (gst >= 0),
-    total_price NUMERIC(10, 2) NOT NULL
+    total_price NUMERIC(10, 2) NOT NULL,
+    gst_percentage NUMERIC(3, 1) DEFAULT 18,
+    status BOOLEAN DEFAULT true
   )`,
 };
 

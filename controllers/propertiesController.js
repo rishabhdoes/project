@@ -455,16 +455,15 @@ const updatePgProperty = async (req, res) => {
   try {
     const userId = req.user.id;
     const { pgId } = req.params;
-    console.log(pgId);
 
     const { rows } = await db.query("SELECT * FROM pgs WHERE id = $1", [pgId]);
 
     if (!rows.length) return res.status(404).json("Pg does not exist");
 
     const pg = rows[0];
-    
+
     if (pg.owner_id !== userId) return res.status(401).json("Not Authorised");
-    
+
     let updatedPg = {};
 
     const {
@@ -497,6 +496,8 @@ const updatePgProperty = async (req, res) => {
 
       lockin_period = null,
       preferred_tenants = null,
+      complete_address = null,
+      pincode = null,
       gender = null,
       food_available = null,
       rank = null,
@@ -546,6 +547,8 @@ const updatePgProperty = async (req, res) => {
       food_available,
       rank,
       post_property_page_no,
+      complete_address,
+      pincode,
       modified_at: new Date(Date.now()),
       latitude: coordinates?.[0],
       longitude: coordinates?.[1],
@@ -578,6 +581,8 @@ const updatePgProperty = async (req, res) => {
       "preferred_tenants",
       "gender",
       "food_available",
+      "complete_address",
+      "pincode",
       "rank",
       "post_property_page_no",
       "latitude",
@@ -722,33 +727,53 @@ const updatePgProperty = async (req, res) => {
       }));
 
     if (pgFacilitiesArr.length > 0) {
-      let updatedPgFacility = {};
+      let updatedPgFacilities = {};
 
-      if (rows.length === 0) {
-        const columns = pgFacilitiesArr
-          .map((facility) => `"${facility.key}"`)
+      const { rows, rowCount } = await db.query(
+        "SELECT * FROM pgFacilities WHERE pg_id = $1",
+        [pgId]
+      );
+
+      if (rowCount > 0) {
+        const parameterValues = pgFacilitiesArr.map(
+          (facility) => facility.value
+        );
+
+        parameterValues.push(pgId);
+
+        const setClause = pgFacilitiesArr
+          .map((facility, index) => `${facility.key} = $${index + 1}`)
           .join(", ");
-        const placeholders = pgFacilitiesArr
-          .map((_, index) => `$${index + 1}`)
-          .join(", ");
 
-        const dbQuery = `INSERT INTO pgFacilities (${columns}) VALUES (${placeholders}) RETURNING *`;
-
-        const values = pgFacilitiesArr.map((cur) => cur.value);
-
-        updatedPgFacility = await db.query(dbQuery, [...values, pgId]);
-      } else {
-        const values = pgFacilitiesArr.map((facility, index) => facility.value);
-        const updateFacilities = `UPDATE pgFacilities SET ${pgFacilitiesArr
-          .map((facility, index) => `"${facility.key}" = $${index + 1}`)
-          .join(", ")} WHERE pg_id = $${
+        const updateQuery = `UPDATE pgFacilities SET ${setClause} WHERE pg_id = $${
           pgFacilitiesArr.length + 1
         } RETURNING *`;
 
-        updatedPgFacility = await db.query(updateFacilities, [...values, pgId]);
+        const { rows } = await db.query(updateQuery, parameterValues);
+
+        if (rows.length > 0) updatedPgFacilities = rows[0];
+      } else {
+        pgFacilitiesArr.push({ key: "pg_id", value: pgId });
+
+        const parameterKeys = pgFacilitiesArr
+          .map((facility) => facility.key)
+          .join(", ");
+        const parameterValues = pgFacilitiesArr.map(
+          (facility) => facility.value
+        );
+
+        const setClause = pgFacilitiesArr
+          .map((_, index) => `$${index + 1}`)
+          .join(", ");
+
+        const insertQuery = `INSERT INTO pgFacilities (${parameterKeys}) VALUES (${setClause}) RETURNING *`;
+
+        const { rows } = await db.query(insertQuery, [...parameterValues]);
+
+        if (rows.length > 0) updatedPgFacilities = rows[0];
       }
 
-      updatedPg = { ...updatedPg, ...updatedPgFacility };
+      updatedPg = { ...updatedPg, ...updatedPgFacilities };
     }
 
     res.status(200).json({ message: "Updated Pg Successfully", pg: updatedPg });
@@ -848,7 +873,7 @@ const listPropertiesOnSearch = async (req, res) => {
       dinner = undefined,
       attached_bathroom = undefined,
     } = filters || {};
-    
+
     let available_date_less_than = undefined;
     let available_date_greater_than = undefined;
     if (available_from === "immediate") {
@@ -860,15 +885,15 @@ const listPropertiesOnSearch = async (req, res) => {
     } else if (available_from === "after 30 days") {
       available_date_greater_than += new Date() + 30 * 24 * 60 * 60 * 1000;
     }
-    
+
     const keywords = text.map((textArray) => {
       const op = textArray.split(",");
       return op;
     });
-    
+
     const allKeywords = keywords.flat();
-    console.log("property_with_image:", property_with_image)
-    
+    console.log("property_with_image:", property_with_image);
+
     const queryForHouse = `
     SELECT houses.id as houses_id,*, housefacilities.id as housefacilities_id
     FROM houses
@@ -918,7 +943,7 @@ const listPropertiesOnSearch = async (req, res) => {
         property_type,
         10 * (pgNo - 1),
         10,
-        property_with_image
+        property_with_image,
       ]);
 
       const houseIds = houseData.rows.map((row) => row.houses_id);
@@ -1090,8 +1115,8 @@ const listPropertiesOnSearch = async (req, res) => {
         double_room,
         triple_room,
         four_room,
-        breakfast, 
-        lunch, 
+        breakfast,
+        lunch,
         dinner,
         property_with_image,
         attached_bathroom,
@@ -1108,8 +1133,8 @@ const listPropertiesOnSearch = async (req, res) => {
         double_room,
         triple_room,
         four_room,
-        breakfast, 
-        lunch, 
+        breakfast,
+        lunch,
         dinner,
         attached_bathroom,
         price_greater_than,

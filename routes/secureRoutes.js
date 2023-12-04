@@ -64,6 +64,7 @@ const {
   paymentInitiation,
   getAllPaymentPlans,
   getPlanData,
+  increaseContacts,
   getAllTransactionByUser,
   paymentTransactionStatus,
   paymentStatus,
@@ -176,6 +177,8 @@ router.get("/payment-plans", getAllPaymentPlans);
 router.get("/plan-data", getPlanData);
 router.get("/paymentTransactionStatus", paymentTransactionStatus);
 router.get("/getAllTransactionByUser", getAllTransactionByUser);
+
+router.patch("/increase-contacts", increaseContacts);
 
 router.get("/logout", logout);
 
