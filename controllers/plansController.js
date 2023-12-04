@@ -8,13 +8,14 @@ async function getPlans(req, res) {
       `SELECT * FROM paymentplans WHERE id = $1`,
       [id]
     );
+
     if (rowCount === 0) {
       return res.status(400).json({
         message: "No Plans Found",
       });
     }
     const plan = rows[0];
-    return res.status(400).json({
+    return res.status(200).json({
       plan,
     });
   } catch (error) {
@@ -67,7 +68,6 @@ async function updatePlans(req, res) {
     const values1 = filteredObject.map((cur) => {
       return cur.value;
     });
-    console.log([...values1, id]);
     const { rows } = await db.query(updateDbQuery, [...values1, id]);
 
     res.status(200).json({
@@ -85,10 +85,11 @@ async function createPlans(req, res) {
       no_of_contacts,
       discount,
       plan_description,
-      gst,
       gst_percentage,
-      total_price,
     } = req.body;
+
+    const total_price = (1 + gst_percentage / 100.0 - discount / 100.0) * price;
+    const gst = total_price - price;
 
     const { rows, rowCount } = await db.query(
       `insert into paymentplans (plan_type,price,no_of_contacts,discount,plan_description,gst,gst_percentage,total_price)
@@ -105,9 +106,7 @@ async function createPlans(req, res) {
       ]
     );
 
-    return res.status(400).json({
-      message: "Plan Succesfully Created",
-    });
+    return res.status(200).json("Successfully created new payment plan");
   } catch (error) {
     console.log("error:", error);
     res.status(400).json({
@@ -119,8 +118,6 @@ async function createPlans(req, res) {
 async function togglePlanStatus(req, res) {
   try {
     const { id } = req.query;
-
-    //console.log(id);
 
     const query = `update paymentplans set status = not status where id=$1`;
 
