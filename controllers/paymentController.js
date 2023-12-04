@@ -14,10 +14,11 @@ const paymentInitiation = async (req, res) => {
     formbody = "";
 
   const { data, no_of_contacts } = req.body;
+  const date_now = new Date();
 
   await db.query(
-    `Insert into payments (user_id, amount, status, order_id, currency, no_of_contacts)
-  values($1, $2, $3, $4, $5, $6)`,
+    `Insert into payments (user_id, amount, status, order_id, currency, no_of_contacts, payment_date)
+  values($1, $2, $3, $4, $5, $6, $7)`,
     [
       req.user.id,
       data.amount,
@@ -25,6 +26,7 @@ const paymentInitiation = async (req, res) => {
       data.order_id,
       data.currency,
       no_of_contacts,
+      date_now
     ]
   );
 
