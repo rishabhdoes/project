@@ -13,13 +13,13 @@ const paymentInitiation = async (req, res) => {
     encRequest = "",
     formbody = "";
 
-  const { data, no_of_contacts } = req.body;
+  const { data, no_of_contacts, plan_id } = req.body;
 
   const date_now = new Date();
 
   await db.query(
-    `Insert into payments (user_id, amount, status, order_id, currency, no_of_contacts, payment_date)
-  values($1, $2, $3, $4, $5, $6, $7)`,
+    `Insert into payments (user_id, amount, status, order_id, currency, no_of_contacts, payment_date, plan_id)
+  values($1, $2, $3, $4, $5, $6, $7, $8)`,
 
     [
       req.user.id,
@@ -28,7 +28,8 @@ const paymentInitiation = async (req, res) => {
       data.order_id,
       data.currency,
       no_of_contacts,
-      date_now
+      date_now,
+      plan_id
     ]
   );
 
@@ -163,6 +164,19 @@ const paymentTransactionStatus = async  (req, res) => {
     encRequest = "",
     formbody = "";
   const  data  = req.query;
+  const {order_no} = data;
+  const {rows} = await db.query(
+    `SELECT plan_id from payments WHERE order_id=$1`,
+    [order_no]
+  );
+  const {plan_id} = rows[0];
+  console.log("plan_id:", plan_id)
+
+  const {rows: planDetails} = await db.query(
+    `SELECT * from paymentplans WHERE id=$1`,
+    [plan_id]
+  );
+  console.log("planDetails:", planDetails)
 
 
   //Generate Md5 hash for the key and then convert in base64 string
@@ -202,7 +216,6 @@ const paymentTransactionStatus = async  (req, res) => {
       };
   
       const response = await axios(config);
-      console.log("response:", response.data)
 
       const result = response.data;
       let status = '';
@@ -214,9 +227,7 @@ const paymentTransactionStatus = async  (req, res) => {
           status = ccav.decrypt(info_value[1].trim(), keyBase64, ivBase64);
         }
       });
-      // console.log("status:", status)
-      console.log("status:", status)
-      return res.status(200).json(status);
+      return res.status(200).json({status:status, planDetails:planDetails?.[0]});
 
     } catch (error) {
       return null;
