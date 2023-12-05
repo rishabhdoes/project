@@ -264,7 +264,9 @@ const queries = {
       amount DECIMAL(10, 2) NOT NULL,
       payment_method VARCHAR(50) NOT NULL,
       status VARCHAR(20) Default "pending",
-      transaction_id VARCHAR(100)
+      transaction_id VARCHAR(100),
+      plan_id VARCHAR(200)
+      FOREIGN KEY(plan_id) REFERENCES paymentPlans(id)
   )`,
 
   paymentPlans: `
