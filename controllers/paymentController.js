@@ -13,7 +13,19 @@ const paymentInitiation = async (req, res) => {
     encRequest = "",
     formbody = "";
 
-  const { data, no_of_contacts, plan_id } = req.body;
+  let { data, no_of_contacts, plan_id } = req.body;
+
+  const {rows} = await db.query(`SELECT * FROM paymentplans where id = $1`, [plan_id]);
+
+  data = {
+    ...data,
+    amount: rows[0].total_price, 
+    no_of_contacts: rows[0].no_of_contacts, 
+    currency: 'INR',
+    language: `EN`,
+    redirect_url: `https://homewale.com/api/public/api/payment-status`,
+    cancel_url: `https://homewale.com/api/public/api/payment-status`,
+  }
 
   const date_now = new Date();
 
