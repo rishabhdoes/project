@@ -6,7 +6,10 @@ const http = require("http"),
   qs = require("querystring");
 const { CLIENT_URL } = require("../config/index.js");
 const axios = require("axios");
+const { sendMsg } = require("../utils/errors");
+
 const paymentInitiation = async (req, res) => {
+  try{
   let user = req.user;
   const id = user?.id;
   var body = "",
@@ -16,8 +19,12 @@ const paymentInitiation = async (req, res) => {
     formbody = "";
 
   let { plan_id } = req.body;
+    const {rows, rowCount} = await db.query(`SELECT * FROM paymentplans where id = $1`, [plan_id]);
 
-  const {rows} = await db.query(`SELECT * FROM paymentplans where id = $1`, [plan_id]);
+  
+
+  
+  if(rowCount) {
 
   const timestamp = Date.now();
   const orderId = `${id.slice(0, 5)}-${timestamp}`;
@@ -93,6 +100,15 @@ const paymentInitiation = async (req, res) => {
     // End the res after sending all the data
     res.end();
   }
+}
+else {
+  return sendMsg(res, 400, false, "Sorry, No Payment plans found!");
+}
+}
+catch{
+  return sendMsg(res, 400, false, "Sorry, No Payment plans found!");
+
+}
   // });
   return;
 };
