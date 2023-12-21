@@ -44,7 +44,7 @@ const paymentInitiation = async (req, res) => {
       "pending",
       data.order_id,
       data.currency,
-      no_of_contacts,
+      rows[0].no_of_contacts,
       date_now,
       plan_id
     ]
