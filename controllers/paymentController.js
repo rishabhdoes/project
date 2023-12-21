@@ -19,9 +19,9 @@ const paymentInitiation = async (req, res) => {
 
   const {rows} = await db.query(`SELECT * FROM paymentplans where id = $1`, [plan_id]);
 
+  const timestamp = Date.now();
   const orderId = `${id.slice(0, 5)}-${timestamp}`;
   const data = {
-    ...data,
     merchant_id: process.env.MERCHANT_ID,
     order_id:orderId,
     amount: rows[0].total_price, 
