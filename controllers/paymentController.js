@@ -7,18 +7,23 @@ const http = require("http"),
 const { CLIENT_URL } = require("../config/index.js");
 const axios = require("axios");
 const paymentInitiation = async (req, res) => {
+  let user = req.user;
+  const id = user?.id;
   var body = "",
-    workingKey = "720702AAB0A040750D93E088C061049E", //Put in the 32-Bit key shared by CCAvenues.
-    accessCode = "AVYV17KJ86AH05VYHA", //Put in the Access Code shared by CCAvenues.
+    workingKey = process.env.WORKING_KEY, //Put in the 32-Bit key shared by CCAvenues.
+    accessCode = process.env.ACCESS_CODE, //Put in the Access Code shared by CCAvenues.
     encRequest = "",
     formbody = "";
 
-  let { data, no_of_contacts, plan_id } = req.body;
+  let { plan_id } = req.body;
 
   const {rows} = await db.query(`SELECT * FROM paymentplans where id = $1`, [plan_id]);
 
-  data = {
+  const orderId = `${id.slice(0, 5)}-${timestamp}`;
+  const data = {
     ...data,
+    merchant_id: process.env.MERCHANT_ID,
+    order_id:orderId,
     amount: rows[0].total_price, 
     no_of_contacts: rows[0].no_of_contacts, 
     currency: 'INR',
