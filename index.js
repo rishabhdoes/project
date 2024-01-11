@@ -15,6 +15,7 @@ app.use(
     origin: [
       CLIENT_URL,
       "https://homewale.com",
+      "https://www.homewale.com",
       "https://test.ccavenue.com",
       "https://test.ccavenue.com/transaction",
     ],
